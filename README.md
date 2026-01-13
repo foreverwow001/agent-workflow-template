@@ -10,6 +10,7 @@
 - ✅ **7-Stage Workflow** - Plan → Approve → Role Selection → Execute → QA → Log → Close
 - ✅ **4 核心角色** - Planner, Domain Expert, Engineer, QA
 - ✅ **Skills 系統** - Code Review, Doc Generation, Test Runner
+- ✅ **自動化執行** - SendText Bridge + 自動監測完成 (v1.1.0 新增)
 - ✅ **Gate System** - 多重審核閘門防止失控執行
 - ✅ **Scope Break** - 範圍中斷機制
 - ✅ **繁體中文** - 完整中文化文件
