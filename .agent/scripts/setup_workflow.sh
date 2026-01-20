@@ -212,127 +212,7 @@ cat > "$TARGET/doc/plans/Idx-000_plan.template.md" << 'EOF'
 EOF
 echo -e "${GREEN}  ✅ 模板與初始檔案建立完成${NC}"
 
-# Step 6 (v1.2.0): SendText Bridge has been removed
-# Use VS Code native terminal.sendText + Proposed API instead
-# Legacy version available at tag v1.1.0-sendtext-legacy
-
-# [REMOVED v1.2.0] # Step 6: 複製 SendText Bridge 擴充與腳本
-# [REMOVED v1.2.0] echo -e "${BLUE}[6/8] 複製 SendText Bridge 擴充...${NC}"
-# [REMOVED v1.2.0] 
-# [REMOVED v1.2.0] # 複製擴充目錄
-# [REMOVED v1.2.0] if [ -d "$SOURCE/../tools/sendtext-bridge" ]; then
-# [REMOVED v1.2.0]     cp -r "$SOURCE/../tools/sendtext-bridge" "$TARGET/tools/"
-# [REMOVED v1.2.0]     echo -e "${GREEN}  ✅ SendText Bridge 擴充複製完成${NC}"
-# [REMOVED v1.2.0] else
-# [REMOVED v1.2.0]     echo -e "${YELLOW}  ⚠️  SendText Bridge 擴充不存在，跳過${NC}"
-# [REMOVED v1.2.0] fi
-# [REMOVED v1.2.0] 
-# [REMOVED v1.2.0] # 複製執行腳本
-# [REMOVED v1.2.0] if [ -f "$SOURCE/scripts/sendtext.sh" ]; then
-# [REMOVED v1.2.0]     cp "$SOURCE/scripts/sendtext.sh" "$TARGET/.agent/scripts/"
-# [REMOVED v1.2.0]     chmod +x "$TARGET/.agent/scripts/sendtext.sh"
-# [REMOVED v1.2.0] fi
-# [REMOVED v1.2.0] 
-# [REMOVED v1.2.0] if [ -f "$SOURCE/scripts/run_codex_template.sh" ]; then
-# [REMOVED v1.2.0]     cp "$SOURCE/scripts/run_codex_template.sh" "$TARGET/.agent/scripts/"
-# [REMOVED v1.2.0]     chmod +x "$TARGET/.agent/scripts/run_codex_template.sh"
-# [REMOVED v1.2.0] fi
-# [REMOVED v1.2.0] 
-# [REMOVED v1.2.0] if [ -f "$SOURCE/scripts/auto_execute_plan.sh" ]; then
-# [REMOVED v1.2.0]     cp "$SOURCE/scripts/auto_execute_plan.sh" "$TARGET/.agent/scripts/"
-# [REMOVED v1.2.0]     chmod +x "$TARGET/.agent/scripts/auto_execute_plan.sh"
-# [REMOVED v1.2.0] fi
-# [REMOVED v1.2.0] 
-# [REMOVED v1.2.0] echo -e "${GREEN}  ✅ 執行腳本複製完成${NC}"
-# [REMOVED v1.2.0] 
-# [REMOVED v1.2.0] # Step 7: 建立 SendText Bridge 安裝說明
-# [REMOVED v1.2.0] cat > "$TARGET/tools/SENDTEXT_BRIDGE_SETUP.md" << 'BRIDGE_EOF'
-# [REMOVED v1.2.0] # SendText Bridge 安裝說明
-# [REMOVED v1.2.0] 
-# [REMOVED v1.2.0] ## 前置條件
-# [REMOVED v1.2.0] 
-# [REMOVED v1.2.0] - Dev Container 環境
-# [REMOVED v1.2.0] - VS Code 1.95+
-# [REMOVED v1.2.0] 
-# [REMOVED v1.2.0] ## 安裝步驟
-# [REMOVED v1.2.0] 
-# [REMOVED v1.2.0] 1. 進入 Dev Container
-# [REMOVED v1.2.0] 
-# [REMOVED v1.2.0] 2. 安裝擴充：
-# [REMOVED v1.2.0]    ```bash
-# [REMOVED v1.2.0]    code --install-extension tools/sendtext-bridge/sendtext-bridge-0.0.3.vsix --force
-# [REMOVED v1.2.0]    ```
-# [REMOVED v1.2.0] 
-# [REMOVED v1.2.0] 3. 重新載入 VS Code：
-# [REMOVED v1.2.0]    ```
-# [REMOVED v1.2.0]    Developer: Reload Window
-# [REMOVED v1.2.0]    ```
-# [REMOVED v1.2.0] 
-# [REMOVED v1.2.0] 4. 確認安裝：
-# [REMOVED v1.2.0]    ```bash
-# [REMOVED v1.2.0]    curl -sS http://127.0.0.1:38765/health
-# [REMOVED v1.2.0]    # 應回傳: {"ok":true}
-# [REMOVED v1.2.0]    ```
-# [REMOVED v1.2.0] 
-# [REMOVED v1.2.0] 5. 測試：
-# [REMOVED v1.2.0]    ```bash
-# [REMOVED v1.2.0]    .agent/scripts/sendtext.sh text "echo Hello" --execute
-# [REMOVED v1.2.0]    ```
-# [REMOVED v1.2.0] 
-# [REMOVED v1.2.0] ## 使用方式
-# [REMOVED v1.2.0] 
-# [REMOVED v1.2.0] ### 發送文字並執行
-# [REMOVED v1.2.0] ```bash
-# [REMOVED v1.2.0] .agent/scripts/sendtext.sh text "codex" --execute
-# [REMOVED v1.2.0] ```
-# [REMOVED v1.2.0] 
-# [REMOVED v1.2.0] ### 先送文字不按 Enter
-# [REMOVED v1.2.0] ```bash
-# [REMOVED v1.2.0] .agent/scripts/sendtext.sh text "/status"
-# [REMOVED v1.2.0] ```
-# [REMOVED v1.2.0] 
-# [REMOVED v1.2.0] ### 單獨送 Enter
-# [REMOVED v1.2.0] ```bash
-# [REMOVED v1.2.0] .agent/scripts/sendtext.sh enter
-# [REMOVED v1.2.0] ```
-# [REMOVED v1.2.0] 
-# [REMOVED v1.2.0] ### 自動化執行 Plan
-# [REMOVED v1.2.0] ```bash
-# [REMOVED v1.2.0] .agent/scripts/auto_execute_plan.sh doc/plans/Idx-XXX_plan.md
-# [REMOVED v1.2.0] ```
-# [REMOVED v1.2.0] 
-# [REMOVED v1.2.0] ## 端點說明
-# [REMOVED v1.2.0] 
-# [REMOVED v1.2.0] - `GET /health` - 健康檢查
-# [REMOVED v1.2.0] - `POST /send` - 發送文字（可選是否執行）
-# [REMOVED v1.2.0] - `POST /enter` - 單獨送 Enter
-# [REMOVED v1.2.0] - `POST /wait` - 等待 Codex CLI 完成（輪詢 git status）
-# [REMOVED v1.2.0] 
-## 故障排除
-
-### 擴充未啟動
-
-```bash
-# 檢查擴充列表
-code --list-extensions | grep sendtext
-
-# 重新安裝
-code --uninstall-extension ivyhousetw.sendtext-bridge
-code --install-extension tools/sendtext-bridge/sendtext-bridge-0.0.3.vsix --force
-```
-
-### Token 檔案不存在
-
-擴充首次啟動會自動建立：
-- `.agent/state/sendtext_bridge_token`
-- `.agent/state/sendtext_bridge_info.json`
-
-若未建立，請重新載入 VS Code。
-BRIDGE_EOF
-
-echo -e "${GREEN}  ✅ SendText Bridge 安裝說明建立完成${NC}"
-
-# Step 8: 建立專案規則檔模板
+# Step 6: 建立專案規則檔模板
 echo -e "${BLUE}[8/8] 建立專案規則檔...${NC}"
 cat > "$TARGET/project_rules.md" << EOF
 # $PROJECT_NAME - 系統開發核心守則
@@ -394,21 +274,17 @@ echo ""
 echo -e "${YELLOW}📝 後續步驟：${NC}"
 echo "  1. 編輯 $TARGET/project_rules.md 填入專案資訊"
 echo "  2. 編輯 $TARGET/.agent/roles/domain_expert.md 客製化領域專家"
-echo "  3. 安裝 SendText Bridge：參考 $TARGET/tools/SENDTEXT_BRIDGE_SETUP.md"
-echo "  4. 在 VS Code 開啟專案，測試輸入 /dev-team"
+echo "  3. 在 VS Code 開啟專案，測試輸入 /dev-team"
 echo ""
 echo -e "${BLUE}📁 已建立的結構：${NC}"
 echo "  $TARGET/"
 echo "  ├── .agent/"
 echo "  │   ├── workflows/ (AGENT_ENTRY.md, dev-team.md)"
 echo "  │   ├── roles/ (planner, engineer, qa, domain_expert)"
-echo "  │   ├── scripts/ (sendtext.sh, run_codex_template.sh, auto_execute_plan.sh)"
-echo "  │   ├── state/ (預留給 sendtext bridge)"
+echo "  │   ├── VScode_system/ (terminal definitions)"
 echo "  │   └── templates/"
 echo "  ├── tools/"
-echo "  │   ├── sendtext-bridge/ (VS Code 擴充)"
-echo "  │   └── SENDTEXT_BRIDGE_SETUP.mdode_reviewer, doc_generator, test_runner)"
-echo "  │   └── templates/"
+echo "  │   └── (reserved for future tools)"
 echo "  ├── doc/"
 echo "  │   ├── plans/ (Idx-000_plan.template.md)"
 echo "  │   └── implementation_plan_index.md"
