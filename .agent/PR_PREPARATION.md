@@ -1,282 +1,223 @@
-# 🚀 PR Preparation: Template v1.1.0 Integration
+# Agent Workflow Template - 準備發佈
 
-> **目標**：將 Ivyhousetw-META 專案的自動化改進合併到 `agent-workflow-template`
-> **版本**：v1.0.0 → v1.1.0
-> **日期**：2026-01-13
+## 📦 需要打包的內容
 
----
+### 1. 核心檔案
 
-## 📦 需要合併的檔案清單
-
-### 1️⃣ 新增檔案（New Files）
-
-#### A. SendText Bridge Extension
 ```
-tools/sendtext-bridge/
-├── extension.js              ← 核心邏輯（v0.0.3，包含 /wait 端點）
-├── package.json              ← 擴充配置（v0.0.3）
-├── README.md                 ← 安裝與使用指南
-└── sendtext-bridge-0.0.3.vsix ← 預編譯版本（方便直接安裝）
-```
-
-**說明**：
-- `/send` 端點：發送文字到終端機（可選執行）
-- `/wait` 端點：監測 git status 變更（輪詢模式，timeout 300s）
-- 僅監聽 `127.0.0.1`（安全性考量）
-- Token 驗證機制（`.agent/state/sendtext_bridge_token`）
-
-#### B. 自動化執行腳本
-```
-.agent/scripts/
-├── auto_execute_plan.sh      ← 自動化執行（發送 → 等待 → QA 提示）
-├── run_codex_template.sh     ← 批次執行（同步回傳）
-└── sendtext.sh               ← SendText Bridge CLI wrapper
-```
-
-**說明**：
-- `auto_execute_plan.sh`：實現 Step 3 的「自動化模式」
-- `run_codex_template.sh`：實現 Step 3 的「批次模式」
-- `sendtext.sh`：簡化 curl 呼叫，提供 `text` / `enter` 子命令
-
-#### C. 使用指南
-```
-tools/
-└── SENDTEXT_BRIDGE_GUIDE.md  ← 完整使用指南（新建）
+agent-workflow-template/
+├── .agent/
+│   ├── workflows/
+│   │   ├── AGENT_ENTRY.md
+│   │   └── dev-team.md
+│   ├── roles/
+│   │   ├── planner.md
+│   │   ├── engineer.md
+│   │   ├── qa.md
+│   │   └── domain_expert.md (template)
+│   ├── skills/
+│   │   ├── code_reviewer.py
+│   │   ├── doc_generator.py
+│   │   ├── test_runner.py
+│   │   ├── explore_cli_tool.md
+│   │   └── skill_whitelist.json (empty template)
+│   ├── scripts/
+│   │   ├── run_codex_template.sh ⭐
+│   │   └── setup_workflow.sh
+│   ├── state/ (runtime state; tokens/log)
+│   └── templates/
+│       └── handoff_template.md
+├── tools/
+│   └── (reserved)
+├── doc/
+│   ├── plans/
+│   │   └── Idx-000_plan.template.md
+│   ├── logs/
+│   │   └── Idx-000_log.template.md
+│   └── implementation_plan_index.md (template)
+├── .devcontainer/
+│   └── devcontainer.json (optional, 範例)
+├── project_rules.md (template)
+├── README.md
+└── LICENSE
 ```
 
-#### D. 發佈準備文件
-```
-.agent/
-├── AGENT_WORKFLOW_TEMPLATE_PREP.md  ← 發佈準備文件
-└── CHANGELOG_v1.1.0.md              ← 版本更新記錄
-```
+### 2. 新增的核心功能 ⭐
 
----
+#### VS Code 內建終端協作（Coordinator）
+- **目的**：以 GitHub Copilot Chat 作為 Coordinator，透過 VS Code 內建 `terminal.sendText` 注入指令，並以 Proposed API 監控終端輸出。
+- **限制**：不使用任何外部 Bridge/Server，不以 bash 腳本「代送」指令到 Codex/OpenCode（避免 TUI/程序中斷）。
 
-### 2️⃣ 修改檔案（Modified Files）
+#### 自動化執行腳本
+- `run_codex_template.sh`：批次執行 Codex CLI（JSONL 審計）
 
-#### A. Workflow 文件
-```
-.agent/workflows/dev-team.md
-```
+### 3. 文件需求
 
-**主要變更**：
-- ✅ Step 3 新增「執行模式」章節：
-  - 模式 A：GitHub Copilot 執行
-  - 模式 B：Codex CLI 執行（批次模式 vs 自動化模式）
-- ✅ 新增「執行模式比較表」
-- ✅ 新增「完成流程」（建立 Log → 刪除 Plan → Git commit）
-- ✅ Step 4 新增「觸發時機」說明（3 種模式）
+#### README.md（主文件）
+```markdown
+# Agent Workflow Template
 
-**變更行數**：約 50 行新增
+多代理協作開發工作流程模板，整合 GitHub Copilot 與 Codex CLI。
 
-#### B. 移植腳本
-```
-.agent/scripts/setup_workflow.sh
-```
+## 特色
 
-**主要變更**：
-- ✅ 6 步驟 → 8 步驟
-- ✅ Step 6：複製 SendText Bridge 擴充與腳本
-- ✅ Step 7：建立 `tools/SENDTEXT_BRIDGE_SETUP.md`
-- ✅ 更新目錄結構輸出（包含 `tools/`, `.agent/scripts/`, `.agent/state/`）
+- ✅ 多代理角色定義（Planner / Engineer / QA / Expert）
+- ✅ 自動化執行流程（Codex CLI 整合）
+- ✅ Cross-QA 規則
+- ✅ JSONL 審計記錄
+- ✅ L2 自動回滾
 
-**變更行數**：約 80 行新增
+## 快速開始
 
-#### C. 可攜性指南
-```
-.agent/PORTABLE_WORKFLOW.md
-```
+### 方式 1：使用 GitHub Template（推薦）
 
-**主要變更**（建議）：
-- ✅ 新增「工具章節」（SendText Bridge 安裝）
-- ✅ 更新「必須移植的檔案結構」（包含 `tools/`）
-- ✅ 新增「工具驗證」步驟（檢查 HTTP 服務是否啟動）
-
-**變更行數**：約 30 行新增
-
-#### D. README.md
-```
-README.md
-```
-
-**主要變更**（建議）：
-- ✅ 特色章節新增「自動化執行」
-- ✅ 工具清單新增「SendText Bridge」
-- ✅ 使用範例新增「自動化執行」範例
-- ✅ 安裝步驟新增「工具安裝」
-
-**變更行數**：約 40 行新增
-
----
-
-### 3️⃣ 目錄結構變更
-
-#### 新增目錄
-```
-tools/                         ← 新增（存放擴充與工具）
-  └── sendtext-bridge/
-
-.agent/state/                  ← 新增（存放 runtime 狀態）
-  ├── sendtext_bridge_token
-  └── sendtext_bridge_info.json
-```
-
-#### 更新 .gitignore
-```
-# Agent Workflow Runtime State
-.agent/state/
-.agent/backup/
-
-# VS Code Extensions
-*.vsix
-
-# Temporary Files
-*.tmp
-*.log
-```
-
----
-
-## 📋 合併前檢查清單
-
-### 功能驗證
-- [ ] SendText Bridge 在 Dev Container 中可正常安裝
-- [ ] `/send` 端點功能正常（文字發送到終端機）
-- [ ] `/wait` 端點功能正常（監測 git status 變更）
-- [ ] `auto_execute_plan.sh` 完整流程測試
-- [ ] `sendtext.sh` CLI wrapper 功能正常
-
-### 文件完整性
-- [ ] README.md 更新完整（功能說明、安裝步驟、使用範例）
-- [ ] CHANGELOG.md 記錄所有變更
-- [ ] PORTABLE_WORKFLOW.md 包含工具移植步驟
-- [ ] SendText Bridge 有獨立使用指南
-
-### 相容性測試
-- [ ] setup_workflow.sh 在空專案中可正常執行
-- [ ] 舊專案可透過「只複製 tools/」的方式升級
-- [ ] 未安裝 SendText Bridge 時，舊模式仍可正常運作
-
-### 安全性檢查
-- [ ] Token 機制正常（隨機生成、檔案權限 600）
-- [ ] HTTP 服務僅監聽 127.0.0.1
-- [ ] 無 Hard-coded 敏感資訊
-- [ ] .gitignore 正確排除 `.agent/state/`
-
----
-
-## 🔄 合併流程建議
-
-### Phase 1: 核心檔案合併
-1. 複製 `tools/sendtext-bridge/` 整個目錄
-2. 複製 `.agent/scripts/auto_execute_plan.sh`
-3. 複製 `.agent/scripts/run_codex_template.sh`
-4. 複製 `.agent/scripts/sendtext.sh`
-
-### Phase 2: 文件更新
-1. 更新 `.agent/workflows/dev-team.md`
-2. 更新 `.agent/scripts/setup_workflow.sh`
-3. 更新 `README.md`
-4. 新增 `tools/SENDTEXT_BRIDGE_GUIDE.md`
-5. 新增 `CHANGELOG.md`
-
-### Phase 3: 測試與驗證
-1. 在測試專案執行 `setup_workflow.sh`
-2. 驗證所有檔案正確複製
-3. 測試 SendText Bridge 安裝流程
-4. 執行完整的自動化執行流程
-
-### Phase 4: 發佈
-1. 建立 Git Tag `v1.1.0`
-2. 撰寫 Release Notes（參考 CHANGELOG.md）
-3. 更新 README.md 的版本標籤
-4. 通知現有使用者升級
-
----
-
-## 📊 預估影響
-
-### 新增功能
-- ✅ 自動化執行模式（發送 Plan → 監測完成 → QA）
-- ✅ SendText Bridge 擴充（終端機文字注入）
-- ✅ 批次執行模式（run_codex_template.sh）
-- ✅ 完整的工具生態系統（tools/）
-
-### 檔案統計
-- **新增檔案**：8 個
-- **修改檔案**：4 個
-- **新增程式碼**：約 500 行
-- **修改程式碼**：約 200 行
-
-### 向下相容性
-- ✅ 舊專案無需修改即可運作
-- ✅ 新功能為「選用」而非「必須」
-- ✅ 未安裝 SendText Bridge 時，手動模式仍可用
-
----
-
-## 🎯 合併後驗收標準
-
-### 必須通過的測試
-1. **空專案初始化測試**
+1. 點擊 "Use this template"
+2. Clone 新專案
+3. 執行初始化：
    ```bash
-   ./setup_workflow.sh /tmp/test-project
-   cd /tmp/test-project
-   # 驗證所有檔案存在
+   ./.agent/scripts/setup_workflow.sh .
    ```
 
-2. **SendText Bridge 安裝測試**
-   ```bash
-   cd tools/sendtext-bridge
-   npx --yes @vscode/vsce package
-   code --install-extension *.vsix --force
-   # Reload Window 後驗證
-   curl http://127.0.0.1:38765/health
-   ```
+### 方式 2：手動複製
 
-3. **自動化執行測試**
-   ```bash
-   .agent/scripts/auto_execute_plan.sh doc/plans/Idx-001_plan.md
-   # 驗證：發送 → 等待 → QA 提示
-   ```
+```bash
+git clone https://github.com/YOUR_ORG/agent-workflow-template.git
+cd agent-workflow-template
+./.agent/scripts/setup_workflow.sh /path/to/your-project
+```
 
-4. **文件完整性測試**
-   - [ ] README.md 所有連結可正常點擊
-   - [ ] PORTABLE_WORKFLOW.md 步驟可正常執行
-   - [ ] SENDTEXT_BRIDGE_GUIDE.md 所有範例可運作
+## 使用指南
+
+### 1. 配置專案
+
+編輯 `project_rules.md` 填入專案資訊。
+
+### 2. 啟動 Dev Team
+
+在 VS Code 中：
+
+```
+/dev
+```
+
+### 3. Codex CLI 自動化
+
+```bash
+# 批次執行（同步，立即回傳結果）
+.agent/scripts/run_codex_template.sh doc/plans/Idx-XXX_plan.md
+```
+
+## 文件
+
+- [Dev Team Workflow](.agent/workflows/dev-team.md)
+- [Agent Entry](.agent/workflows/AGENT_ENTRY.md)
+
+## 需求
+
+- VS Code 1.95+
+- GitHub Copilot (建議)
+- Codex CLI 0.80+ (選用)
+- Dev Container (選用)
+```
+
+#### CONTRIBUTING.md
+```markdown
+# Contributing
+
+## 如何貢獻
+
+1. Fork this repo
+2. Create feature branch
+3. 測試變更
+4. Submit PR
+
+## 測試
+
+```bash
+# 測試 setup script
+./test_setup.sh
+```
+
+## 版本發佈
+
+1. 更新 CHANGELOG.md
+2. 更新版本號
+3. 建立 Git tag
+```
+
+### 4. GitHub Template 設定
+
+在 GitHub repo settings：
+
+1. ✅ Template repository
+2. 添加 Topics:
+   - `agent-workflow`
+   - `github-copilot`
+   - `codex-cli`
+   - `vscode-extension`
+   - `dev-container`
+
+### 5. 授權
+
+- 建議使用 MIT License
+- 如有拆出獨立工具/套件，請提供獨立 LICENSE
 
 ---
 
-## 📝 合併後的 TODO
+## 🚀 發佈步驟
 
-### 短期（v1.1.x）
-- [ ] 收集社群反饋
-- [ ] 修正潛在 bug
-- [ ] 新增使用範例（影片或截圖）
-- [ ] 撰寫疑難排解文件
+### Phase 1：本地整理
 
-### 中期（v1.2.0）
-- [ ] 支援多終端機監測
-- [ ] 新增 `/status` 端點（查詢執行狀態）
-- [ ] 優化 `/wait` 輪詢邏輯（減少 CPU 使用）
-- [ ] 支援 WebSocket（即時通知）
+1. [ ] 建立新 repo `agent-workflow-template`
+2. [ ] 複製核心檔案（參考上方結構）
+3. [ ] 測試 setup_workflow.sh
+4. [ ] 撰寫 README.md
+5. [ ] 添加範例 `.devcontainer/devcontainer.json`
 
-### 長期（v2.0.0）
-- [ ] SendText Bridge 發佈到 VS Code Marketplace
-- [ ] 整合 GitHub Actions（自動化測試）
-- [ ] 建立 Docker Image（開箱即用）
-- [ ] 多語言支援（英文文件）
+### Phase 2：GitHub 發佈
 
----
+1. [ ] Push 到 GitHub
+2. [ ] 設定為 Template repository
+3. [ ] 添加 Topics
+4. [ ] 建立 Release（v1.0.0）
+5. [ ] 撰寫 Release Notes
 
-## 📧 聯絡與支援
+### Phase 3：測試驗證
 
-- **GitHub Issues**: [agent-workflow-template/issues](https://github.com/foreverwow001/agent-workflow-template/issues)
-- **Discussions**: [agent-workflow-template/discussions](https://github.com/foreverwow001/agent-workflow-template/discussions)
+1. [ ] 使用 Template 建立測試專案
+2. [ ] 執行完整流程（Plan → Execute → QA）
+4. [ ] 收集反饋改進
 
 ---
 
-**最後更新**: 2026-01-13
-**準備者**: GitHub Copilot
-**審核者**: [待指定]
+## 📝 建議的 Repo 描述
+
+**Short Description:**
+```
+Multi-agent development workflow template with GitHub Copilot & Codex CLI integration
+```
+
+**Full Description:**
+```
+A production-ready template for multi-agent collaborative development workflows.
+Features automated execution and Cross-QA rules for collaborative workflows.
+
+✅ Planner / Engineer / QA / Expert roles
+✅ Codex CLI automation with monitoring
+✅ JSONL audit logging
+✅ L2 auto-rollback
+```
+
+---
+
+## 🎯 未來改進
+
+1. **CI/CD 整合**：自動測試 setup script
+2. **多語言支援**：英文版文件
+3. **視覺化工具**：Dashboard 顯示執行狀態
+4. **Plugin 系統**：支援自訂技能擴充
+
+---
+
+**建立日期**: 2026-01-13
+**維護者**: @foreverjojo

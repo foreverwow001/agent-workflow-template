@@ -3,7 +3,11 @@ description: 艾薇虛擬開發團隊工作流程 - 自動化 Plan → Consult �
 ---
 # 🤖 艾薇虛擬開發團隊工作流程
 
-當使用者輸入 `/dev-team` 或請求「啟動開發團隊」時，請依照以下步驟執行。
+當使用者輸入 `/dev`（或相容別名 `/dev-team`）或請求「啟動開發團隊」時，請依照以下步驟執行。
+
+> 📌 **Slash 指令說明**：
+> - `/dev` 或 `/dev-team`：啟動本 repo 的 dev-team workflow（Ivy Coordinator 流程）
+> - 如果你有個人的 Copilot prompt file 使用 `/dev`，建議改用其他名稱（如 `/devchat`）以避免衝突
 
 ---
 
@@ -27,7 +31,13 @@ description: 艾薇虛擬開發團隊工作流程 - 自動化 Plan → Consult �
    - 需要修改/新增的檔案清單
    - 每個檔案的邏輯細節
    - 注意事項與風險提示
-4. **保存 Spec 為獨立文件**：`doc/plans/Idx-NNN_plan.md`
+4. **保存 Spec 為獨立文件**：
+   - **Workflow/治理改善任務** → `.agent/plans/Idx-NNN_plan.md`
+   - **專案功能開發任務** → `doc/plans/Idx-NNN_plan.md`
+5. **Plan 固定段落（必須存在）**：
+   - `## 📋 SPEC`
+   - `## 🔍 RESEARCH & ASSUMPTIONS`（至少包含 `research_required: true/false`）
+   - `## 🔒 SCOPE & CONSTRAINTS`（含 File whitelist / Done 定義 / Rollback / Max rounds）
 
 **產出格式**：參考模板 `doc/plans/Idx-000_plan.template.md`
 
@@ -80,91 +90,101 @@ description: 艾薇虛擬開發團隊工作流程 - 自動化 Plan → Consult �
 
 ### Step 2.5️⃣ 執行工具選擇 (Role Selection Gate) 🚦
 
-**執行者**: Planner（暫時）或 Workflow Coordinator（未來）
+**執行者**: GitHub Copilot Chat（固定作為 Coordinator）
 
 **觸發條件**: Plan 通過 User Approval Gate 且 Meta Expert Review 完成
 
-**任務**: 選擇適當的執行工具並更新 Plan
+**任務**: 由用戶選擇 Engineer/QA 要使用的終端工具，Coordinator 更新 Plan 的 `EXECUTION_BLOCK`
+
+**Research Gate（條件式，必先完成）**：
+- 若 Plan 的 `research_required: true` 或依賴檔案變更（`requirements.txt`、`pyproject.toml`、`*requirements*.txt`）
+  - 必須先補齊 Plan 的 `RESEARCH & ASSUMPTIONS`（Link-required；無來源則標 `RISK: unverified`）
+  - 未完成不得進入 Engineer 執行
+
+**Plan Validator Gate（必先完成）**：
+- 在進入 Engineer 執行前，必須先用 `plan_validator` 驗證 Plan（由 Project terminal 執行）：
+  ```bash
+  python .agent/skills/plan_validator.py <plan_file_path>
+  ```
+- 若回傳 `status: fail|error` → 退回 Planner 修正 Plan，未通過不得進入 Engineer
 
 **決策選項**:
-1. **GitHub Copilot**: 互動式開發，需要即時反饋
-2. **Codex CLI**: 批次執行，明確的檔案操作
+1. **Codex CLI（VS Code Terminal）**: 執行 / QA
+2. **OpenCode CLI（VS Code Terminal）**: 執行 / QA
 
 **決策因素**:
-- 任務複雜度
-- 是否需要即時反饋
-- 檔案數量與操作類型
+- 工具可用性（目前哪個 terminal 可用、是否已啟動）
+- 任務型態（批次修改 / 需要實際跑指令 / 需要互動式調整）
+- Cross-QA（QA 工具必須 ≠ 最後修改程式碼的工具）
 
-**輸出格式**（寫入 Plan 檔）：
+**輸出格式**（寫入 Plan 檔；新 Plan 一律使用 `EXECUTION_BLOCK`）：
 
 ```markdown
 <!-- EXECUTION_BLOCK_START -->
-execution: [copilot|codex-cli]
+# Plan 狀態
+plan_created: [YYYY-MM-DD HH:mm:ss]
+plan_approved: [YYYY-MM-DD HH:mm:ss]
+scope_policy: [strict|flexible]
+expert_required: [true|false]
+expert_conclusion: [N/A|結論摘要]
+scope_exceptions: []
+
+# Engineer 執行
+executor_tool: [codex-cli|opencode]
+executor_tool_version: [version]
+executor_user: [github-account or email]
+executor_start: [YYYY-MM-DD HH:mm:ss]
+executor_end: [YYYY-MM-DD HH:mm:ss]
+session_id: [terminal session ID if available]
+last_change_tool: [codex-cli|opencode]
+
+# QA 執行
+qa_tool: [codex-cli|opencode]
+qa_tool_version: [version]
+qa_user: [github-account or email]
+qa_start: [YYYY-MM-DD HH:mm:ss]
+qa_end: [YYYY-MM-DD HH:mm:ss]
+qa_result: [PASS|PASS_WITH_RISK|FAIL]
+qa_compliance: [✅ 符合|⚠️ 例外：原因]
+
+# 收尾
+log_file_path: [.agent/logs/Idx-XXX_log.md（workflow任務）或 doc/logs/Idx-XXX_log.md（專案任務）]
+commit_hash: [pending|hash]
+rollback_at: [N/A|YYYY-MM-DD HH:mm:ss]
+rollback_reason: [N/A|原因]
+rollback_files: [N/A|檔案清單]
 <!-- EXECUTION_BLOCK_END -->
 ```
 
+> ⚠️ **注意**：`last_change_tool` 只允許 `codex-cli` 或 `opencode`，不含 `copilot`（Copilot 固定為 Coordinator，不做實作）。
+
 **VS Code 原生模式**:
-- Codex CLI 執行時，使用 VS Code 原生終端（會話自然延續，無需 tmux）
-- 若需要「對話框 → 終端」注入互動指令（例如 `/status`、分段 Enter），使用 SendText Bridge 透過 `terminal.sendText` 注入到固定 terminal（`Codex CLI`）
-- 建議用腳本：`.agent/scripts/sendtext.sh`（`text` / `enter`）
-- 失敗時自動觸發 L2 Rollback（乾淨 worktree 前提；審計檔保留於 `.agent/`）
+- Codex/OpenCode 一律在 VS Code 原生終端中執行（會話自然延續）
+- **指令注入**：由 Coordinator 使用 VS Code 內建 `terminal.sendText` 對指定終端送出指令/文字
+- **禁止**：用 bash 腳本「代送」指令到 Codex/OpenCode（可能導致程序/TUI 退出或狀態被重置）
+- **即時監控**：由 Coordinator 使用 VS Code Proposed API 監測終端輸出（例如 `terminalDataWriteEvent`）
 
 ---
 
 ### Step 3️⃣ 全端工程師 (Engineer)
 **角色定義**：參考 `.agent/roles/engineer.md`
 
-**任務**：根據 Planner 的 Spec、Meta Expert 的建議與 Plan 中的 `execution` 欄位，落實程式碼。
+**任務**：根據 Planner 的 Spec、Meta Expert 的建議與 Plan 的 `EXECUTION_BLOCK.executor_tool`，由選定的終端工具完成實作。
 
-**執行模式**（由 Step 2.5 決定）：
+**執行方式**（由 Step 2.5 決定）：
 
-#### 模式 A: GitHub Copilot 執行
-- **適用於**: 小規模修改（1-3 個檔案）、關鍵邏輯重構、需要即時反饋
-- **執行方式**: 由 GitHub Copilot 直接在 IDE 中實作
-- **產出格式**:
-  ```markdown
-  ## 🔧 實作報告 (GitHub Copilot)
-
-  ### 已修改/新增的檔案
-  - `path/to/file.py`: [變更說明]
-
-  ### 主要變更
-  [列出關鍵修改]
-  ```
-
-#### 模式 B: Codex CLI 執行
-- **適用於**: 大規模檔案新增（4+ 個檔案）、模板化重複性工作、批次處理
-- **執行方式**:
-  - **批次模式**: 使用 `.agent/scripts/run_codex_template.sh`（`codex exec` + exit code + JSONL 審計）
-  - **自動化模式**: 使用 `.agent/scripts/auto_execute_plan.sh`（發送 Plan → 自動監測完成 → 提示執行 QA）
-
-**執行命令**:
-
-  ```bash
-  # 方式 1: 批次執行（同步，立即回傳結果）
-  .agent/scripts/run_codex_template.sh doc/plans/Idx-XXX_plan.md
-
-  # 方式 2: 自動化執行（發送 → 監測 → QA 提示）
-  .agent/scripts/auto_execute_plan.sh doc/plans/Idx-XXX_plan.md
-  ```
-
-**自動化模式工作流程**:
-  1. 📤 **發送 Plan** 到 Codex CLI terminal
-  2. ⏳ **自動監測** Codex CLI 執行狀態（透過 `/wait` 端點輪詢 `git status`）
-  3. ✅ **偵測完成** 後自動提示執行 QA（Cross-QA: Copilot）
-
-**技術實作**:
-  - 使用 SendText Bridge 的 `/wait` 端點
-  - 每 2 秒檢查一次 `git status --porcelain`
-  - 最多等待 5 分鐘（可調整）
-  - 有變更即表示 Codex CLI 完成
+#### 共同規則（Coordinator 必須落地）
+- **Plan 注入方式**：僅使用 VS Code 內建 `terminal.sendText` 對「已啟動的 Codex/OpenCode 終端」送出指令/Plan 文字
+- **完成條件**：Engineer 結束時在終端輸出 completion marker（例如：`[ENGINEER_DONE]`）
+- **即時監控**：Coordinator 以 Proposed API 監測終端輸出，直到偵測 completion marker 或 timeout
+- **Scope Gate**：偵測到變更後，Coordinator 必須先確認變更檔案未超出 Plan 的檔案清單（超出則停下來請用戶決策）
 
 - **執行記錄**:
   - ✅ 每次執行追加到 `.agent/execution_log.jsonl`
-  - ✅ 失敗時自動觸發 L2 Rollback（僅限乾淨 worktree）
+  - ✅ 失敗/超範圍時，先由 Coordinator 詢問用戶是否回滾/拆分（禁止自動執行破壞性操作）
 - **產出格式**:
   ```markdown
-  ## 🔧 實作報告 (Codex CLI)
+  ## 🔧 實作報告 (Executor Tool)
 
   ### 已修改/新增的檔案
   [由 Codex 輸出]
@@ -175,6 +195,28 @@ execution: [copilot|codex-cli]
 - 單檔不超過 500 行
 - 無 Hard-code API Key
 - 遵循 `ivy_house_rules.md` 核心守則
+
+**Skill Execution Gate（每次變更必執行，且需留證據）**：
+- 對每個新建/修改的 `.py` 檔案執行：
+  ```bash
+  python .agent/skills/code_reviewer.py <file_path>
+  ```
+- 若專案有測試，執行：
+  ```bash
+  python .agent/skills/test_runner.py [test_path]
+  ```
+- **Coordinator 收集流程（VS Code 原生模式）**：
+  - Copilot Chat 透過 `terminal.sendText()` 對已啟動的 Codex/OpenCode 終端注入指令
+  - 使用 VS Code Proposed API 監測終端輸出
+  - 從 stdout 擷取 JSON 結果
+  - 將結果寫入 Log 的 `## 🛠️ SKILLS_EXECUTION_REPORT` 段落
+- **Skills Evaluation（建議每回合一次，產生可追溯統計）**：
+  - 若 Log 已包含 `SKILLS_EXECUTION_REPORT`，執行：
+    ```bash
+    python .agent/skills/skills_evaluator.py <log_file_path>
+    ```
+  - 將輸出摘要/統計寫入 Log 的 `## 📈 SKILLS_EVALUATION` 段落
+- 若 `code_reviewer.py` 回傳 `status: fail`（例如 API key 洩漏）→ 立即停止並回報 user
 
 **產出格式** (若為模式 A)：
 ```markdown
@@ -190,15 +232,27 @@ execution: [copilot|codex-cli]
 **角色定義**：參考 `.agent/roles/qa.md`
 
 **觸發時機**:
-- **模式 A (Copilot)**: 實作完成後立即執行
-- **模式 B (Codex CLI 自動化)**: 由 `auto_execute_plan.sh` 偵測完成後自動提示
-- **模式 B (Codex CLI 批次)**: 手動確認完成後執行
+- Engineer completion marker 被偵測後立即執行
 
+**Cross-QA 工具檢測（在審查前執行）**：
+1. 讀取 Plan 的 `EXECUTION_BLOCK.last_change_tool`
+2. 用戶選擇 `qa_tool`（`codex-cli|opencode`）
+3. 若 `qa_tool == last_change_tool` → **拒絕執行 QA**，要求改選另一個工具（除非符合例外並記錄）
+
+**記錄格式**:
+- 違規: `qa_compliance: ⚠️ 違規（同工具）- 理由：[用戶說明]`
+- 例外: `qa_compliance: ⚠️ 例外（小修正）- 變更：[X 行]`
+- 豁免: `qa_compliance: ✅ 豁免（文件修正）- 檔案：[列表]`
 **任務**：
 1. 審查工程師的程式碼。
-2. **確認 Cross-QA 規則**：QA 工具必須與 Executor 不同
-   - Executor: Copilot → QA: Codex CLI
-   - Executor: Codex CLI → QA: Copilot
+2. **確認 Cross-QA 規則**：QA 工具必須與 `last_change_tool` 不同
+   - last_change_tool: codex-cli → QA: opencode
+   - last_change_tool: opencode → QA: codex-cli
+3. **條件式 Gate（輸出到 Log）**：
+   - **UI/UX Gate**：若 Scope Gate 判定 `UI/UX triggered: YES`（基於變更檔案清單）
+     - QA 報告後必須補 `## UI/UX CHECK`（code review 為主；不跑獨立工具）
+   - **Maintainability Gate**：若存在程式碼變更（例如 `.py`）且（變更行數 > 50 或命中核心路徑 `core/**`/`utils/**`/`config.py`）
+     - QA 報告後必須補 `## MAINTAINABILITY REVIEW`（Must/Should/Nice；Reviewer 永不改 code）
 3. 執行 Checklist：
    - [ ] 無 Hard-code API Key？
    - [ ] 有中文檔案註釋？
@@ -208,17 +262,17 @@ execution: [copilot|codex-cli]
    - [ ] **若使用新的 CLI 工具，是否已遵循探索流程？**
 4. 產出審查報告。
 
-> 💡 **工具探索流程**：首次使用新工具時，必須執行 `<tool> --help` 確認參數，禁止憑經驗臆測。詳見 [`.agent/skills/explore_cli_tool.md`](file:///.agent/skills/explore_cli_tool.md)
+> 💡 **工具探索流程**：首次使用新工具時，必須執行 `<tool> --help` 確認參數，禁止憑經驗臆測。詳見 [`.agent/skills/explore_cli_tool.md`](.agent/skills/explore_cli_tool.md)
 
-> ⚠️ **Cross-QA 違規處理**：如果 Executor 與 QA Tool 相同，必須在 Log 中標記 `QA Compliance: ⚠️ 違規` 並說明原因。
+> ⚠️ **Cross-QA 違規處理**：如果 `last_change_tool == qa_tool`，必須在 Log 中標記 `qa_compliance: ⚠️ 違規` 並說明原因。
 
 **產出格式**：
 ```markdown
 ## ✅ 品管審查報告
 
 ### Cross-QA 檢核
-- Executor: [GitHub Copilot | Codex CLI]
-- QA Tool: [Codex CLI | GitHub Copilot]
+- Last Change Tool: [codex-cli | opencode]
+- QA Tool: [codex-cli | opencode]
 - Compliance: [✅ 符合 | ⚠️ 違規：原因]
 
 ### Checklist
@@ -241,11 +295,15 @@ execution: [copilot|codex-cli]
 ## 🏁 完成
 
 當 QA 審查通過後：
-1. **建立執行記錄**: 將 `doc/plans/Idx-XXX_plan.md` 轉為 `doc/logs/Idx-XXX_log.md`
-2. **刪除 Plan 檔案**: 刪除 `doc/plans/Idx-XXX_plan.md`
-3. **提交變更**: `git commit` 所有變更
+1. **建立執行記錄**: 由 Coordinator 產生執行記錄：
+   - **Workflow/治理改善任務** → `.agent/logs/Idx-XXX_log.md`（引用 `.agent/plans/Idx-XXX_plan.md`）
+   - **專案功能開發任務** → `doc/logs/Idx-XXX_log.md`（引用 `doc/plans/Idx-XXX_plan.md`）
+2. **保留 Plan 檔案**: Plan 檔案不刪除（作為規格與決策留存）
+3. **提交變更（選用）**: 是否 `git commit` 由用戶決策
 
 如果 QA 發現問題，請回到 **Step 3 (Engineer)** 修正後再次審查。
+
+> 💡 Log 段落結構示例：`.agent/logs/Idx-010_log_template_example.md`（workflow/治理任務）
 
 ---
 
@@ -253,9 +311,8 @@ execution: [copilot|codex-cli]
 
 | 模式 | 適用情境 | 啟動方式 | 監測 | QA 觸發 |
 |------|---------|---------|------|---------|
-| Copilot 直接執行 | 小規模修改（1-3 檔） | IDE 內實作 | 手動 | 立即 |
-| Codex CLI 批次 | 大規模批次處理 | `run_codex_template.sh` | 手動 | 手動確認後 |
-| Codex CLI 自動化 | 大規模 + 需自動監測 | `auto_execute_plan.sh` | **自動** | **自動提示** |
+| Codex CLI（VS Code Terminal） | 批次處理、檔案操作、快速執行 | Coordinator 以 `terminal.sendText` 注入 | Proposed API（終端輸出 + marker） | marker 偵測後 |
+| OpenCode CLI（VS Code Terminal） | 需要互動式終端操作/實跑指令 | Coordinator 以 `terminal.sendText` 注入 | Proposed API（終端輸出 + marker） | marker 偵測後 |
 
 ---
 
