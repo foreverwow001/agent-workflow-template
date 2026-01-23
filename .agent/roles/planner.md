@@ -39,9 +39,21 @@ description: 艾薇規劃師 (Planner) - 負責產出開發規格
 3. 在 `Implementation_Plan_index.md` 登記任務
 4. 繼續進入 Step 2 (Meta Expert)
 
+## 執行工具選擇與記錄（Step 2.5 後執行）
+
+**責任邊界（重要）**：
+- Planner 只負責「產出可執行的 Plan 文件」；**不負責**挑選工具、不回填 `executor_tool/qa_tool/last_change_tool`。
+- `EXECUTION_BLOCK` 由 Planner 初始化為「待用戶確認」的 placeholder（參考 `doc/plans/Idx-000_plan.template.md`）。
+- 工具選擇、終端注入（`terminal.sendText`）、監控（Proposed API）、以及 `EXECUTION_BLOCK` 的回填，全部由 Coordinator 負責。
+
+**Planner 在 Plan 中必須寫清楚**：
+1. **完成條件**：Engineer/QA 必須在終端最後輸出 completion marker（`[ENGINEER_DONE]` / `[QA_DONE]` / `[FIX_DONE]`）。
+2. **Scope 白名單**：列出允許變更的檔案清單；超出必須走 Gate。
+3. **Cross-QA 規則**：`qa_tool ≠ last_change_tool`（例外需記錄在 `qa_compliance`）。
+
 ## 必須遵守的規則檔案
 > **重要**：在執行任何任務前，請先閱讀並遵守以下規則：
-> - 📜 [`ivy_house_rules.md`](file:///ivy_house_rules.md) - 艾薇手工坊系統開發核心守則
+> - 📜 [`ivy_house_rules.md`](ivy_house_rules.md) - 艾薇手工坊系統開發核心守則
 >
 > 此檔案定義了語言規範、架構策略、開發流程、技術規範與資安紅線。
 > **違反這些規則的任何產出都是不合格的。**

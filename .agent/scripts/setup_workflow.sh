@@ -65,7 +65,7 @@ cp "$SOURCE/workflows/dev-team.md" "$TARGET/.agent/workflows/"
 echo -e "${GREEN}  ✅ Workflow 檔案複製完成${NC}"
 
 # Step 3: 複製 Roles 檔案
-echo -e "${BLUE}[3/8] 複製 Roles 檔案...${NC}"
+echo -e "${BLUE}[3/6] 複製 Roles 檔案...${NC}"
 cp "$SOURCE/roles/planner.md" "$TARGET/.agent/roles/"
 cp "$SOURCE/roles/engineer.md" "$TARGET/.agent/roles/"
 cp "$SOURCE/roles/qa.md" "$TARGET/.agent/roles/"
@@ -110,7 +110,7 @@ EOF
 echo -e "${GREEN}  ✅ Roles 檔案複製完成${NC}"
 
 # Step 4: 複製 Skills 檔案
-echo -e "${BLUE}[4/8] 複製 Skills 檔案...${NC}"
+echo -e "${BLUE}[4/6] 複製 Skills 檔案...${NC}"
 if [ -f "$SOURCE/skills/code_reviewer.py" ]; then
     cp "$SOURCE/skills/code_reviewer.py" "$TARGET/.agent/skills/"
 fi
@@ -132,7 +132,7 @@ echo '{"whitelist": [], "last_updated": "'$(date -Iseconds)'"}' > "$TARGET/.agen
 echo -e "${GREEN}  ✅ Skills 檔案複製完成${NC}"
 
 # Step 5: 複製 Templates 並建立初始檔案
-echo -e "${BLUE}[5/8] 建立模板與初始檔案...${NC}"
+echo -e "${BLUE}[5/6] 建立模板與初始檔案...${NC}"
 if [ -f "$SOURCE/templates/handoff_template.md" ]; then
     cp "$SOURCE/templates/handoff_template.md" "$TARGET/.agent/templates/"
 fi
@@ -212,8 +212,25 @@ cat > "$TARGET/doc/plans/Idx-000_plan.template.md" << 'EOF'
 EOF
 echo -e "${GREEN}  ✅ 模板與初始檔案建立完成${NC}"
 
-# Step 6: 建立專案規則檔模板
-echo -e "${BLUE}[8/8] 建立專案規則檔...${NC}"
+# Step 6: 複製執行腳本（不含 VS Code 擴充）
+echo -e "${BLUE}[6/6] 複製執行腳本...${NC}"
+
+copy_script() {
+    local src="$1"
+    local dst="$2"
+    if [ -f "$src" ]; then
+        cp "$src" "$dst"
+        chmod +x "$dst/$(basename "$src")" 2>/dev/null || true
+    fi
+}
+
+	copy_script "$SOURCE/scripts/run_codex_template.sh" "$TARGET/.agent/scripts/"
+	# Note: Terminal Bridge Server 已移除；終端注入與監控改由 VS Code 內建 terminal.sendText + Proposed API 處理。
+
+echo -e "${GREEN}  ✅ 執行腳本複製完成${NC}"
+
+# Step 7: 建立專案規則檔模板
+echo -e "${BLUE}[7/7] 建立專案規則檔...${NC}"
 cat > "$TARGET/project_rules.md" << EOF
 # $PROJECT_NAME - 系統開發核心守則
 
@@ -272,19 +289,21 @@ echo -e "${GREEN}✅ Agent Workflow 初始化完成！${NC}"
 echo -e "${GREEN}========================================${NC}"
 echo ""
 echo -e "${YELLOW}📝 後續步驟：${NC}"
-echo "  1. 編輯 $TARGET/project_rules.md 填入專案資訊"
-echo "  2. 編輯 $TARGET/.agent/roles/domain_expert.md 客製化領域專家"
-echo "  3. 在 VS Code 開啟專案，測試輸入 /dev-team"
-echo ""
+	echo "  1. 編輯 $TARGET/project_rules.md 填入專案資訊"
+	echo "  2. 編輯 $TARGET/.agent/roles/domain_expert.md 客製化領域專家"
+	echo "  3. 在 VS Code 開啟專案，測試輸入 /dev-team"
+	echo ""
 echo -e "${BLUE}📁 已建立的結構：${NC}"
 echo "  $TARGET/"
 echo "  ├── .agent/"
-echo "  │   ├── workflows/ (AGENT_ENTRY.md, dev-team.md)"
-echo "  │   ├── roles/ (planner, engineer, qa, domain_expert)"
-echo "  │   ├── VScode_system/ (terminal definitions)"
-echo "  │   └── templates/"
+	echo "  │   ├── workflows/ (AGENT_ENTRY.md, dev-team.md)"
+	echo "  │   ├── roles/ (planner, engineer, qa, domain_expert)"
+	echo "  │   ├── scripts/ (run_codex_template.sh)"
+	echo "  │   ├── state/ (runtime state; tokens/log)"
+	echo "  │   └── templates/"
 echo "  ├── tools/"
-echo "  │   └── (reserved for future tools)"
+echo "  │   └── (reserved)"
+echo "  │   └── templates/"
 echo "  ├── doc/"
 echo "  │   ├── plans/ (Idx-000_plan.template.md)"
 echo "  │   └── implementation_plan_index.md"
