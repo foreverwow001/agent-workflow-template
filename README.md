@@ -47,6 +47,41 @@ nano doc/implementation_plan_index.md
 ```
 /dev-team
 ```
+## 🧩 VS Code Terminal Orchestrator（sendText + 監測）
+
+此 template 內含一個 **local VS Code extension**（`tools/vscode_terminal_orchestrator/`），用來：
+- 自動維持兩個可見 terminal：`Codex CLI` / `OpenCode CLI`
+- 提供 **HTTP SendText Bridge（localhost-only）**，讓 Coordinator 透過 HTTP 對 terminal 送 `terminal.sendText()`
+- （選用）透過 **Proposed API `terminalDataWriteEvent`** 擷取輸出做監測（並有 fallback）
+
+### 最短啟用步驟（Dev Container / VS Code Server）
+
+1) 安裝 extension（容器內執行）：
+
+```bash
+bash scripts/vscode/install_terminal_orchestrator.sh
+```
+
+2) 在 VS Code 內執行：`Developer: Reload Window`
+
+3) 設定 Token（擇一）：
+- 環境變數：`IVY_SENDTEXT_BRIDGE_TOKEN`
+- 或建立檔案：`.service/sendtext_bridge/token`（建議 gitignored）
+
+4) 健康檢查：
+
+```bash
+python scripts/sendtext_bridge_client.py healthz
+```
+
+5) 測試注入（預設不按 Enter）：
+
+```bash
+python scripts/sendtext_bridge_client.py send --terminal-kind codex --text "請輸出 /status"
+```
+
+> 詳細用法、workflow loop、capture/監測說明：請看 `tools/vscode_terminal_orchestrator/README.md`。
+
 
 ## 📁 結構說明
 

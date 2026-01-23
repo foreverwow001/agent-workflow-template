@@ -72,3 +72,25 @@ Thumbs.db
 uploaded_media/
 temp/
 tmp/
+# ---- workflow runtime (template defaults) ----
+# Agent task locks
+.agent/active_task.lock
+# Agent terminal session state
+.agent/.terminal_session.json
+# Agent execution audit & rollback artifacts
+.agent/execution_log.jsonl
+.agent/.pre_execution_backup.patch
+# Terminal bridge runtime files
+.agent/state/terminal_bridge.pid
+.agent/state/terminal_bridge_info.json
+.agent/state/terminal_bridge_token
+# Service manager / extension runtime files
+.service/
+.service/logs/
+.service/pids/
+
+# VS Code workspace files (tracked in this template)
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/tasks.json
+
