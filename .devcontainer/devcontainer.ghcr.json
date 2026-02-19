@@ -1,0 +1,68 @@
+{
+  "name": "Ivyhousetw-META (GHCR pinned devcontainer image)",
+  "image": "ghcr.io/foreverjojo/ivyhousetw-meta-devcontainer@sha256:6d0aeea0a6f6c2d46ee15b32013886b79053b252578bd3782e2787a7e9c7b040",
+  "features": {},
+  "containerEnv": {
+    "UV_VERSION": "0.5.24"
+  },
+  "remoteEnv": {
+    "OAI_API_KEY": "${localEnv:OAI_API_KEY}",
+    "OAI_BASE_URL": "${localEnv:OAI_BASE_URL}",
+    "OPENROUTER_API_KEY": "${localEnv:OPENROUTER_API_KEY}"
+  },
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "python.defaultInterpreterPath": "/workspaces/Ivyhousetw-META/.venv/bin/python",
+        "python.terminal.activateEnvironment": false
+      },
+      "extensions": [
+        "alefragnani.project-manager",
+        "bierner.color-info",
+        "chouzz.vscode-better-align",
+        "christian-kohler.path-intellisense",
+        "dbaeumer.vscode-eslint",
+        "eamodio.gitlens",
+        "emanuelebartolesi.vscode-copilot-insights",
+        "esbenp.prettier-vscode",
+        "github.copilot",
+        "github.copilot-chat",
+        "github.vscode-github-actions",
+        "github.vscode-pull-request-github",
+        "gruntfuggly.todo-tree",
+        "gxl.git-graph-3",
+        "johnpapa.vscode-peacock",
+        "louiswt.regexp-preview",
+        "mechatroner.rainbow-csv",
+        "ms-azuretools.vscode-containers",
+        "ms-python.autopep8",
+        "ms-python.debugpy",
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-python.vscode-python-envs",
+        "oderwat.indent-rainbow",
+        "openai.chatgpt",
+        "rangav.vscode-thunder-client",
+        "ritwickdey.liveserver",
+        "streetsidesoftware.code-spell-checker",
+        "usernamehw.errorlens",
+        "vscode-icons-team.vscode-icons",
+        "yzhang.markdown-all-in-one",
+        "sst-dev.opencode",
+        "ivyhouse-local.ivyhouse-terminal-injector",
+        "ivyhouse-local.ivyhouse-terminal-monitor",
+        "ivyhouse-local.ivyhouse-terminal-orchestrator"
+      ]
+    }
+  },
+  "remoteUser": "vscode",
+  "workspaceFolder": "/workspaces/Ivyhousetw-META",
+  "mounts": [
+    "source=${localWorkspaceFolder},target=/workspaces/Ivyhousetw-META,type=bind,consistency=cached"
+  ],
+    "postCreateCommand": "bash -lc 'set -euo pipefail; cd /workspaces/Ivyhousetw-META; if [ ! -d .venv ]; then python -m venv .venv; fi; . .venv/bin/activate; python -m pip install -U pip; UVV=\"${UV_VERSION:-0.5.24}\"; python -m pip install --no-cache-dir \"uv==${UVV}\"; if [ -f uv.lock ]; then uv sync --frozen --extra dev; else uv pip install -r requirements.txt -r requirements-dev.txt; fi; bash scripts/vscode/install_terminal_orchestrator.sh || true'",
+  "runArgs": [
+    "--add-host=host.docker.internal:host-gateway"
+  ]
+}

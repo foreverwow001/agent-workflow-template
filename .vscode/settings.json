@@ -172,5 +172,12 @@
   // ====== GitHub Copilot: Enable terminal command sending ======
   "github.copilot.advanced": {
     "debug.enableTerminalCommands": true
-  }
+  },
+  "python-envs.pythonProjects": [
+    {
+      "path": "",
+      "envManager": "ms-python.python:venv",
+      "packageManager": "ms-python.python:pip"
+    }
+  ]
 }
