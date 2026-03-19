@@ -1,0 +1,257 @@
+{
+  "name": "ivyhouse-terminal-pty",
+  "displayName": "IvyHouse Terminal PTY",
+  "description": "PTY-native Codex/Copilot terminal runtime with multi-session state, verify, smoke, and backend-aware logs.",
+  "version": "0.0.1",
+  "publisher": "ivyhouse-local",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": ["Other"],
+  "main": "./extension.js",
+  "activationEvents": ["onStartupFinished"],
+  "contributes": {
+    "commands": [
+      {
+        "command": "ivyhouseTerminalPty.start",
+        "title": "IvyHouse PTY: Start Codex PTY"
+      },
+      {
+        "command": "ivyhouseTerminalPty.startCodex",
+        "title": "IvyHouse PTY: Start Codex PTY"
+      },
+      {
+        "command": "ivyhouseTerminalPty.startCopilot",
+        "title": "IvyHouse PTY: Start Copilot PTY"
+      },
+      {
+        "command": "ivyhouseTerminalPty.restart",
+        "title": "IvyHouse PTY: Restart Codex PTY"
+      },
+      {
+        "command": "ivyhouseTerminalPty.restartCodex",
+        "title": "IvyHouse PTY: Restart Codex PTY"
+      },
+      {
+        "command": "ivyhouseTerminalPty.restartCopilot",
+        "title": "IvyHouse PTY: Restart Copilot PTY"
+      },
+      {
+        "command": "ivyhouseTerminalPty.send",
+        "title": "IvyHouse PTY: Send Text to Codex PTY"
+      },
+      {
+        "command": "ivyhouseTerminalPty.sendToCodex",
+        "title": "IvyHouse PTY: Send Text to Codex PTY"
+      },
+      {
+        "command": "ivyhouseTerminalPty.sendToCopilot",
+        "title": "IvyHouse PTY: Send Text to Copilot PTY"
+      },
+      {
+        "command": "ivyhouseTerminalPty.submit",
+        "title": "IvyHouse PTY: Submit in Codex PTY"
+      },
+      {
+        "command": "ivyhouseTerminalPty.submitCodex",
+        "title": "IvyHouse PTY: Submit in Codex PTY"
+      },
+      {
+        "command": "ivyhouseTerminalPty.submitCopilot",
+        "title": "IvyHouse PTY: Submit in Copilot PTY"
+      },
+      {
+        "command": "ivyhouseTerminalPty.verify",
+        "title": "IvyHouse PTY: Verify Codex PTY"
+      },
+      {
+        "command": "ivyhouseTerminalPty.verifyCodex",
+        "title": "IvyHouse PTY: Verify Codex PTY"
+      },
+      {
+        "command": "ivyhouseTerminalPty.verifyCopilot",
+        "title": "IvyHouse PTY: Verify Copilot PTY"
+      },
+      {
+        "command": "ivyhouseTerminalPty.smokeTest",
+        "title": "IvyHouse PTY: Run Codex PTY Smoke Test"
+      },
+      {
+        "command": "ivyhouseTerminalPty.smokeTestCodex",
+        "title": "IvyHouse PTY: Run Codex PTY Smoke Test"
+      },
+      {
+        "command": "ivyhouseTerminalPty.smokeTestCopilot",
+        "title": "IvyHouse PTY: Run Copilot PTY Smoke Test"
+      },
+      {
+        "command": "ivyhouseTerminalPty.showRecoveryStatus",
+        "title": "IvyHouse PTY: Show Recovery Status"
+      },
+      {
+        "command": "ivyhouseTerminalPty.retryLastAction",
+        "title": "IvyHouse PTY: Retry Last Action"
+      },
+      {
+        "command": "ivyhouseTerminalPty.rebuildSession",
+        "title": "IvyHouse PTY: Rebuild PTY Session"
+      },
+      {
+        "command": "ivyhouseTerminalPty.enableFallback",
+        "title": "IvyHouse PTY: Enable Fallback"
+      },
+      {
+        "command": "ivyhouseTerminalPty.declineFallback",
+        "title": "IvyHouse PTY: Decline Fallback"
+      },
+      {
+        "command": "ivyhouseTerminalPty.resetSessionState",
+        "title": "IvyHouse PTY: Reset Session State"
+      },
+      {
+        "command": "ivyhouseTerminalPty.rotateArtifacts",
+        "title": "IvyHouse PTY: Rotate PTY Artifacts"
+      }
+    ],
+    "configuration": {
+      "title": "IvyHouse Terminal PTY",
+      "properties": {
+        "ivyhouseTerminalPty.autoStart": {
+          "type": "boolean",
+          "default": false,
+          "description": "Legacy alias for Codex autoStart. Prefer ivyhouseTerminalPty.autoStartCodex and ivyhouseTerminalPty.autoStartCopilot."
+        },
+        "ivyhouseTerminalPty.autoStartCodex": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically start the Codex PTY terminal on VS Code startup."
+        },
+        "ivyhouseTerminalPty.autoStartCopilot": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically start the Copilot PTY terminal on VS Code startup."
+        },
+        "ivyhouseTerminalPty.codexCommand": {
+          "type": "string",
+          "default": "codex",
+          "description": "Command used to launch Codex inside the PTY bridge."
+        },
+        "ivyhouseTerminalPty.copilotCommand": {
+          "type": "string",
+          "default": "copilot",
+          "description": "Command used to launch Copilot inside the PTY bridge."
+        },
+        "ivyhouseTerminalPty.terminalName": {
+          "type": "string",
+          "default": "Codex PTY",
+          "description": "Legacy alias for ivyhouseTerminalPty.codexTerminalName."
+        },
+        "ivyhouseTerminalPty.codexTerminalName": {
+          "type": "string",
+          "default": "Codex PTY",
+          "description": "Visible terminal name for the PTY-native Codex session."
+        },
+        "ivyhouseTerminalPty.copilotTerminalName": {
+          "type": "string",
+          "default": "Copilot PTY",
+          "description": "Visible terminal name for the PTY-native Copilot session."
+        },
+        "ivyhouseTerminalPty.captureDir": {
+          "type": "string",
+          "default": ".service/terminal_capture",
+          "description": "Workspace-relative directory used for live transcript and debug logs."
+        },
+        "ivyhouseTerminalPty.rotateArtifactsOnStart": {
+          "type": "boolean",
+          "default": true,
+          "description": "Rotate current PTY artifacts before starting a new backend session."
+        },
+        "ivyhouseTerminalPty.rotateArtifactsOnRestart": {
+          "type": "boolean",
+          "default": true,
+          "description": "Rotate current PTY artifacts after close barrier succeeds and before restarting a backend session."
+        },
+        "ivyhouseTerminalPty.rotateArtifactsOnNewWorkflow": {
+          "type": "boolean",
+          "default": true,
+          "description": "Allow ivyhouseTerminalPty.rotateArtifacts to rotate current artifacts at the start of a new workflow task."
+        },
+        "ivyhouseTerminalPty.rotationMaxHistory": {
+          "type": "number",
+          "default": 5,
+          "description": "How many rotated PTY artifact generations to keep per backend and file type."
+        },
+        "ivyhouseTerminalPty.verifyPrompt": {
+          "type": "string",
+          "default": "reply with exactly pty-verify-ok",
+          "description": "Legacy alias for ivyhouseTerminalPty.codexVerifyPrompt."
+        },
+        "ivyhouseTerminalPty.verifyExpected": {
+          "type": "string",
+          "default": "pty-verify-ok",
+          "description": "Legacy alias for ivyhouseTerminalPty.codexVerifyExpected."
+        },
+        "ivyhouseTerminalPty.codexVerifyPrompt": {
+          "type": "string",
+          "default": "reply with exactly pty-verify-ok",
+          "description": "Prompt used by the Codex verify command."
+        },
+        "ivyhouseTerminalPty.codexVerifyExpected": {
+          "type": "string",
+          "default": "pty-verify-ok",
+          "description": "Expected substring used to confirm Codex verify success."
+        },
+        "ivyhouseTerminalPty.copilotVerifyPrompt": {
+          "type": "string",
+          "default": "reply with exactly pty-verify-ok",
+          "description": "Prompt used by the Copilot verify command."
+        },
+        "ivyhouseTerminalPty.copilotVerifyExpected": {
+          "type": "string",
+          "default": "pty-verify-ok",
+          "description": "Expected substring used to confirm Copilot verify success."
+        },
+        "ivyhouseTerminalPty.copilotCloseForceKillDelayMs": {
+          "type": "number",
+          "default": 1500,
+          "description": "Fallback force-kill delay in milliseconds for Copilot PTY sessions."
+        },
+        "ivyhouseTerminalPty.verifyTimeoutMs": {
+          "type": "number",
+          "default": 12000,
+          "description": "Idle timeout in milliseconds for verify and smoke operations. The waiter is extended when Codex continues emitting meaningful progress output."
+        },
+        "ivyhouseTerminalPty.verifyMaxTimeoutMs": {
+          "type": "number",
+          "default": 45000,
+          "description": "Overall cap in milliseconds for verify and smoke operations, even if progress output continues."
+        },
+        "ivyhouseTerminalPty.startupTimeoutMs": {
+          "type": "number",
+          "default": 8000,
+          "description": "Timeout in milliseconds to wait for the PTY session to become writable after start/restart."
+        },
+        "ivyhouseTerminalPty.startupReadyDebounceMs": {
+          "type": "number",
+          "default": 500,
+          "description": "Debounce in milliseconds after semantic startup-ready markers are observed before the first prompt is allowed through."
+        },
+        "ivyhouseTerminalPty.startupSettledSilenceMs": {
+          "type": "number",
+          "default": 500,
+          "description": "Legacy alias for startup debounce. Use ivyhouseTerminalPty.startupReadyDebounceMs for new configuration."
+        },
+        "ivyhouseTerminalPty.smokeIterationCount": {
+          "type": "number",
+          "default": 3,
+          "description": "Number of fresh PTY sessions to exercise during a smoke test run. Each iteration must independently reach startup-ready before prompts are sent."
+        },
+        "ivyhouseTerminalPty.maxRetryCount": {
+          "type": "number",
+          "default": 1,
+          "description": "Maximum number of retry attempts before upgrading to rebuild."
+        }
+      }
+    }
+  }
+}

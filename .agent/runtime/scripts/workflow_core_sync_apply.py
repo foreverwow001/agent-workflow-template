@@ -1,0 +1,225 @@
+#!/usr/bin/env python3
+"""檔案用途：套用指定 release ref 的 workflow-core managed paths，並在需要時串接 projection。"""
+
+from __future__ import annotations
+
+import argparse
+import importlib.util
+import json
+import sys
+from pathlib import Path
+
+
+SCRIPT_DIR = Path(__file__).resolve().parent
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
+
+from workflow_core_contracts import checkout_paths_from_ref, evaluate_manifest_contract, list_files_at_ref, ref_exists  # noqa: E402
+from workflow_core_manifest import manifest_default_path, path_matches_pattern  # noqa: E402
+from workflow_core_sync_precheck import run_sync_precheck  # noqa: E402
+
+
+EXIT_PASS = 0
+EXIT_WARN = 10
+EXIT_FAIL = 20
+EXIT_ERROR = 30
+
+
+def load_projection_module(projection_script: Path):
+    spec = importlib.util.spec_from_file_location("workflow_core_projection_runtime", projection_script)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"unable to load projection script: {projection_script}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def select_sync_mode(explicit_mode: str | None, projection_artifact_path: str) -> str:
+    if explicit_mode:
+        return explicit_mode
+    return "staging-plus-projection" if projection_artifact_path else "direct-root"
+
+
+def run_sync_apply(
+    repo_root: Path,
+    manifest_path: Path,
+    release_ref: str,
+    sync_mode: str | None = None,
+    projection_script: Path | None = None,
+) -> dict:
+    contract = evaluate_manifest_contract(repo_root, manifest_path)
+    precheck = run_sync_precheck(repo_root=repo_root, release_ref=release_ref, manifest_path=manifest_path)
+    if precheck["status"] != "pass":
+        return {
+            "status": "fail",
+            "repo_root": contract["repo_root"],
+            "manifest_path": contract["manifest_path"],
+            "release_ref": release_ref,
+            "sync_mode": select_sync_mode(sync_mode, contract["projection_artifact_path"]),
+            "projection_ran": False,
+            "changed_managed_paths": [],
+            "failed_stage": "precheck",
+            "notes": ["sync precheck did not pass; apply aborted", *precheck["notes"]],
+        }
+
+    if not ref_exists(repo_root, release_ref):
+        return {
+            "status": "fail",
+            "repo_root": contract["repo_root"],
+            "manifest_path": contract["manifest_path"],
+            "release_ref": release_ref,
+            "sync_mode": select_sync_mode(sync_mode, contract["projection_artifact_path"]),
+            "projection_ran": False,
+            "changed_managed_paths": [],
+            "failed_stage": "resolve-release-ref",
+            "notes": ["release ref does not exist in this repository"],
+        }
+
+    resolved_mode = select_sync_mode(sync_mode, contract["projection_artifact_path"])
+    files_at_ref = list_files_at_ref(repo_root, release_ref)
+    changed_managed_paths = sorted(
+        path
+        for path in files_at_ref
+        if any(path_matches_pattern(path, pattern) for pattern in contract["managed_patterns"])
+    )
+    if not changed_managed_paths:
+        return {
+            "status": "fail",
+            "repo_root": contract["repo_root"],
+            "manifest_path": contract["manifest_path"],
+            "release_ref": release_ref,
+            "sync_mode": resolved_mode,
+            "projection_ran": False,
+            "changed_managed_paths": [],
+            "failed_stage": "select-managed-paths",
+            "notes": ["release ref contains no managed paths to apply"],
+        }
+
+    checkout_paths_from_ref(repo_root, release_ref, changed_managed_paths)
+    projection_ran = False
+    notes = ["restored managed paths from release ref"]
+
+    if resolved_mode == "staging-plus-projection":
+        projection_target = projection_script or (repo_root / contract["projection_artifact_path"])
+        if not projection_target.exists():
+            return {
+                "status": "fail",
+                "repo_root": contract["repo_root"],
+                "manifest_path": contract["manifest_path"],
+                "release_ref": release_ref,
+                "sync_mode": resolved_mode,
+                "projection_ran": False,
+                "changed_managed_paths": changed_managed_paths,
+                "failed_stage": "projection-bootstrap",
+                "notes": ["projection script path does not exist"],
+            }
+        projection_module = load_projection_module(projection_target)
+        projection_result = projection_module.run_projection_stub(
+            repo_root=repo_root,
+            manifest_path=manifest_path,
+            bootstrap_overlay_index_file=True,
+        )
+        projection_ran = True
+        notes.extend(projection_result.get("notes", []))
+        if projection_result["status"] == "fail":
+            return {
+                "status": "fail",
+                "repo_root": contract["repo_root"],
+                "manifest_path": contract["manifest_path"],
+                "release_ref": release_ref,
+                "sync_mode": resolved_mode,
+                "projection_ran": True,
+                "changed_managed_paths": changed_managed_paths,
+                "failed_stage": "projection-bootstrap",
+                "notes": notes,
+            }
+
+    return {
+        "status": "pass",
+        "repo_root": contract["repo_root"],
+        "manifest_path": contract["manifest_path"],
+        "release_ref": release_ref,
+        "sync_mode": resolved_mode,
+        "projection_ran": projection_ran,
+        "changed_managed_paths": changed_managed_paths,
+        "failed_stage": None,
+        "notes": notes,
+    }
+
+
+def format_text_report(result: dict) -> str:
+    lines = [
+        f"workflow-core sync apply: {result['status']}",
+        f"repo_root: {result['repo_root']}",
+        f"manifest_path: {result['manifest_path']}",
+        f"release_ref: {result['release_ref']}",
+        f"sync_mode: {result['sync_mode']}",
+        f"projection_ran: {result['projection_ran']}",
+        f"failed_stage: {result['failed_stage']}",
+    ]
+    if result["changed_managed_paths"]:
+        lines.append("changed_managed_paths:")
+        for item in result["changed_managed_paths"]:
+            lines.append(f"  - {item}")
+    if result["notes"]:
+        lines.append("notes:")
+        for item in result["notes"]:
+            lines.append(f"  - {item}")
+    return "\n".join(lines)
+
+
+def exit_code_for_status(status: str) -> int:
+    if status == "pass":
+        return EXIT_PASS
+    if status == "warn":
+        return EXIT_WARN
+    if status == "fail":
+        return EXIT_FAIL
+    return EXIT_ERROR
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--repo-root", type=Path, default=Path.cwd(), help="Repo 根目錄（預設：目前目錄）")
+    parser.add_argument("--release-ref", required=True, help="要套用的 release ref")
+    parser.add_argument("--manifest", type=Path, default=None, help="workflow-core canonical manifest path")
+    parser.add_argument(
+        "--sync-mode",
+        choices=["direct-root", "staging-plus-projection"],
+        default=None,
+        help="同步模式，未指定時依 manifest 自動判定",
+    )
+    parser.add_argument("--projection-script", type=Path, default=None, help="可選的 projection script override")
+    parser.add_argument("--json", action="store_true", help="輸出 JSON")
+    return parser
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = build_parser()
+    args = parser.parse_args(argv)
+    repo_root = args.repo_root.resolve()
+    manifest_path = args.manifest.resolve() if args.manifest else manifest_default_path(repo_root)
+    try:
+        result = run_sync_apply(
+            repo_root=repo_root,
+            manifest_path=manifest_path,
+            release_ref=args.release_ref,
+            sync_mode=args.sync_mode,
+            projection_script=args.projection_script.resolve() if args.projection_script else None,
+        )
+    except Exception as exc:
+        if args.json:
+            print(json.dumps({"status": "error", "error": str(exc)}, ensure_ascii=False, indent=2), file=sys.stderr)
+        else:
+            print(f"workflow-core sync apply error: {exc}", file=sys.stderr)
+        return EXIT_ERROR
+
+    if args.json:
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+    else:
+        print(format_text_report(result))
+    return exit_code_for_status(result["status"])
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

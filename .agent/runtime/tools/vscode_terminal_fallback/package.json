@@ -1,0 +1,167 @@
+{
+  "name": "ivyhouse-terminal-fallback",
+  "displayName": "IvyHouse Terminal Fallback",
+  "description": "On-demand legacy fallback adapter for Codex/Copilot terminal send, capture, verify, and bridge compatibility.",
+  "version": "0.0.1",
+  "publisher": "ivyhouse-local",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": ["Other"],
+  "main": "./extension.js",
+  "enabledApiProposals": ["terminalDataWriteEvent"],
+  "activationEvents": [
+    "onCommand:ivyhouseTerminalFallback.sendLiteral",
+    "onCommand:ivyhouseTerminalFallback.sendLiteralToCodex",
+    "onCommand:ivyhouseTerminalFallback.sendLiteralToCopilot"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "ivyhouseTerminalFallback.startCodex",
+        "title": "IvyHouse Fallback: Start Codex Terminal"
+      },
+      {
+        "command": "ivyhouseTerminalFallback.restartCodex",
+        "title": "IvyHouse Fallback: Restart Codex Terminal"
+      },
+      {
+        "command": "ivyhouseTerminalFallback.startCopilot",
+        "title": "IvyHouse Fallback: Start Copilot Terminal"
+      },
+      {
+        "command": "ivyhouseTerminalFallback.restartCopilot",
+        "title": "IvyHouse Fallback: Restart Copilot Terminal"
+      },
+      {
+        "command": "ivyhouseTerminalFallback.startAll",
+        "title": "IvyHouse Fallback: Start Codex + Copilot Terminals"
+      },
+      {
+        "command": "ivyhouseTerminalFallback.sendToCodex",
+        "title": "IvyHouse Fallback: Send Text to Codex Terminal"
+      },
+      {
+        "command": "ivyhouseTerminalFallback.sendToCopilot",
+        "title": "IvyHouse Fallback: Send Text to Copilot Terminal"
+      },
+      {
+        "command": "ivyhouseTerminalFallback.captureCodexOutput",
+        "title": "IvyHouse Fallback: Capture Codex Output"
+      },
+      {
+        "command": "ivyhouseTerminalFallback.autoCaptureCodexStatus",
+        "title": "IvyHouse Fallback: Auto-Capture Codex /status"
+      },
+      {
+        "command": "ivyhouseTerminalFallback.restartAndCaptureCodexStatus",
+        "title": "IvyHouse Fallback: Restart Codex + Auto-Capture /status"
+      },
+      {
+        "command": "ivyhouseTerminalFallback.verifyCodexStatusInjection",
+        "title": "IvyHouse Fallback: Verify Codex /status Injection"
+      },
+      {
+        "command": "ivyhouseTerminalFallback.startBridge",
+        "title": "IvyHouse Fallback: Start Bridge"
+      },
+      {
+        "command": "ivyhouseTerminalFallback.stopBridge",
+        "title": "IvyHouse Fallback: Stop Bridge"
+      },
+      {
+        "command": "ivyhouseTerminalFallback.showDiagnostics",
+        "title": "IvyHouse Fallback: Show Diagnostics"
+      },
+      {
+        "command": "ivyhouseTerminalFallback.resetSessionState",
+        "title": "IvyHouse Fallback: Reset Session State"
+      }
+    ],
+    "configuration": {
+      "title": "IvyHouse Terminal Fallback",
+      "properties": {
+        "ivyhouseTerminalFallback.codexCommand": {
+          "type": "string",
+          "default": "codex",
+          "description": "Command sent via sendText to start Codex CLI when fallback mode is active."
+        },
+        "ivyhouseTerminalFallback.copilotCommand": {
+          "type": "string",
+          "default": "copilot",
+          "description": "Command sent via sendText to start Copilot CLI when fallback mode is active."
+        },
+        "ivyhouseTerminalFallback.codexTerminalName": {
+          "type": "string",
+          "default": "Codex CLI",
+          "description": "Visible terminal name for the fallback Codex terminal."
+        },
+        "ivyhouseTerminalFallback.copilotTerminalName": {
+          "type": "string",
+          "default": "Copilot CLI",
+          "description": "Visible terminal name for the fallback Copilot terminal."
+        },
+        "ivyhouseTerminalFallback.submitDelayMs": {
+          "type": "number",
+          "default": 350,
+          "description": "Delay in milliseconds between sendText and Enter submission in fallback mode."
+        },
+        "ivyhouseTerminalFallback.captureDir": {
+          "type": "string",
+          "default": ".service/terminal_capture",
+          "description": "Workspace-relative directory used for fallback capture artifacts."
+        },
+        "ivyhouseTerminalFallback.alwaysCaptureCodex": {
+          "type": "boolean",
+          "default": true,
+          "description": "Always write a rolling fallback capture of the Codex terminal to codex_live.txt."
+        },
+        "ivyhouseTerminalFallback.alwaysCaptureCopilot": {
+          "type": "boolean",
+          "default": true,
+          "description": "Always write a rolling fallback capture of the Copilot terminal to copilot_live.txt."
+        },
+        "ivyhouseTerminalFallback.captureMaxSeconds": {
+          "type": "number",
+          "default": 10,
+          "description": "Max seconds to capture terminal output after a fallback command."
+        },
+        "ivyhouseTerminalFallback.captureSilenceMs": {
+          "type": "number",
+          "default": 800,
+          "description": "Stop fallback capture when no new output arrives for this long."
+        },
+        "ivyhouseTerminalFallback.captureMaxBytes": {
+          "type": "number",
+          "default": 65536,
+          "description": "Max bytes written into a single fallback capture file."
+        },
+        "ivyhouseTerminalFallback.bridgePort": {
+          "type": "number",
+          "default": 8765,
+          "description": "Localhost port used by the fallback bridge."
+        },
+        "ivyhouseTerminalFallback.bridgeMaxPayloadBytes": {
+          "type": "number",
+          "default": 32768,
+          "description": "Max payload size in bytes accepted by the fallback bridge /send endpoint."
+        },
+        "ivyhouseTerminalFallback.bridgeMaxRequestBytes": {
+          "type": "number",
+          "default": 65536,
+          "description": "Max request body size in bytes accepted by the fallback bridge."
+        },
+        "ivyhouseTerminalFallback.bridgeRateLimit": {
+          "type": "number",
+          "default": 1,
+          "description": "Fallback bridge token-bucket refill rate per second."
+        },
+        "ivyhouseTerminalFallback.bridgeRateBurst": {
+          "type": "number",
+          "default": 2,
+          "description": "Fallback bridge token-bucket burst size."
+        }
+      }
+    }
+  }
+}
