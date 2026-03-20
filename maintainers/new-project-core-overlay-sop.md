@@ -55,9 +55,42 @@
 
 - `core-v20260320-2`
 
+新專案最小建議依賴如下：
+
+- `git`
+- `python` 或 `python3`，且要能執行 `python -m venv`
+- `node`
+- `npm`
+- `codex`
+- `copilot`
+- `bwrap`（Linux / Dev Container 建議安裝）
+
+如果你是從目前這份 curated core 啟動新 repo，建議把依賴檢查寫成固定第一步，而不是等 PTY 報錯才補救。
+
 ---
 
 ## 3. 第一次建立新專案
+
+### Step 0. 先檢查並安裝最小依賴
+
+第一次 bootstrap 前，先在新 repo 執行：
+
+```bash
+bash .agent/runtime/scripts/install_workflow_prereqs.sh
+```
+
+這支腳本會先檢查新專案最小依賴；若缺少而且環境允許，就會自動安裝。當前自動安裝策略如下：
+
+- `git`、`python3`、`python3-venv`、`python-is-python3`、`nodejs`、`npm`、`bubblewrap`
+  - 透過 `apt-get` 安裝
+- `@openai/codex`、`@github/copilot`
+  - 透過 `npm install -g` 安裝
+
+若你只想先看缺什麼，不想自動安裝：
+
+```bash
+bash .agent/runtime/scripts/install_workflow_prereqs.sh --check-only
+```
 
 ### Step 1. 建立空的 downstream repo
 

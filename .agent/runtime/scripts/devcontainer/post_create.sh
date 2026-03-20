@@ -9,31 +9,9 @@ VENV_UV="$VENV_DIR/bin/uv"
 
 cd "$REPO_ROOT"
 
-ensure_system_package() {
-  local command_name="$1"
-  local package_name="$2"
-
-  if command -v "$command_name" >/dev/null 2>&1; then
-    return 0
-  fi
-
-  if ! command -v sudo >/dev/null 2>&1; then
-    echo "[post-create] sudo not found; skipping ${package_name} install."
-    return 0
-  fi
-
-  if ! sudo -n true >/dev/null 2>&1; then
-    echo "[post-create] passwordless sudo unavailable; skipping ${package_name} install."
-    return 0
-  fi
-
-  echo "[post-create] Installing missing system package: ${package_name}"
-  sudo -n apt-get update
-  sudo -n apt-get install -y --no-install-recommends "$package_name"
-  sudo -n rm -rf /var/lib/apt/lists/*
-}
-
-ensure_system_package bwrap bubblewrap
+if [[ -f .agent/runtime/scripts/install_workflow_prereqs.sh ]]; then
+  bash .agent/runtime/scripts/install_workflow_prereqs.sh || true
+fi
 
 venv_is_usable() {
   [[ -x "$VENV_PYTHON" ]] || return 1

@@ -58,9 +58,12 @@ bash .agent/runtime/scripts/vscode/install_terminal_tooling.sh
 
 前置條件：當前環境必須能直接執行 `codex` 與 `copilot`，或在 VS Code 設定中把 `ivyhouseTerminalPty.codexCommand`、`ivyhouseTerminalPty.copilotCommand` 改成實際可用的執行檔名稱。
 
-2. 在 VS Code 執行：`Developer: Reload Window`
+補充：`install_terminal_tooling.sh` 現在會先檢查 `codex` 與 `copilot` 是否在 PATH 上；若缺少而且環境具備 `npm` 與可寫的 global prefix，或具備 passwordless `sudo`，就會自動執行：
 
-> 這支安裝腳本目前會以 PTY primary、fallback secondary 的順序安裝 tooling，不會替你安裝 `codex` / `copilot` CLI 本體。
+- `npm install -g @openai/codex`
+- `npm install -g @github/copilot`
+
+2. 在 VS Code 執行：`Developer: Reload Window`
 
 ## Artifact Contract
 

@@ -61,6 +61,32 @@ new-project/
 
 技能系統的 split contract 也已定型：builtin core catalog 保留在 `.agent/skills/INDEX.md`，external/local skills 安裝到 `.agent/skills_local/`，overlay catalog 則寫到 `.agent/state/skills/INDEX.local.md`。
 
+### Step 0: 先確認最小依賴
+
+下游 repo 最小建議依賴如下：
+
+- `git`
+- `python` 或 `python3`，且必須支援 `venv`
+- `node`
+- `npm`
+- `codex`
+- `copilot`
+- `bwrap`（Linux / Dev Container 環境建議安裝）
+
+若你是用目前這份 curated core 啟動新 repo，建議先跑：
+
+```bash
+bash .agent/runtime/scripts/install_workflow_prereqs.sh
+```
+
+這支腳本會先檢查上述依賴；若環境具備 `apt-get` 與可用的 root / passwordless `sudo`，或具備可寫的 global npm prefix，則會自動安裝缺少的項目。
+
+若你只想檢查、不想安裝：
+
+```bash
+bash .agent/runtime/scripts/install_workflow_prereqs.sh --check-only
+```
+
 ### Step 1: 複製核心檔案
 
 ```bash

@@ -19,10 +19,12 @@
 
 `post_create.sh` 會處理：
 
+- 先呼叫 `.agent/runtime/scripts/install_workflow_prereqs.sh`，檢查 workflow 最小依賴
 - 建立 `.venv`
 - 安裝固定版 `uv`
 - 若 repo 內存在依賴清單，則安裝依賴
 - 安裝本 repo 內建的 local terminal tooling（PTY primary、fallback secondary，legacy 相容套件暫時保留）
+- 檢查 `codex` / `copilot` CLI 是否存在；若缺少且環境允許，會自動用 npm 全域安裝
 
 > 這個 template 本身不強制依賴 `uv.lock` 或 `requirements*.txt`。若你之後把 template 套用到自己的專案，再把自己的依賴清單加入版控即可。
 
@@ -47,6 +49,28 @@
 ```bash
 bash .agent/runtime/scripts/vscode/install_terminal_tooling.sh
 ```
+
+這支腳本現在會先檢查：
+
+- `git`
+- `python` / `python3 + venv`
+- `node`
+- `codex`
+- `copilot`
+
+另外在 Linux / Dev Container 會一併檢查：
+
+- `bwrap`
+
+若其中任一缺失，而且環境具備 `npm` 與可寫的 global prefix，或具備 passwordless `sudo`，會自動安裝：
+
+```bash
+sudo apt-get install -y git python3 python3-venv python-is-python3 nodejs npm bubblewrap
+sudo npm install -g @openai/codex
+sudo npm install -g @github/copilot
+```
+
+若自動安裝條件不成立，腳本會保留警告訊息，不會靜默跳過。
 
 3. 執行 `Developer: Reload Window`
 

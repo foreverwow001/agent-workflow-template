@@ -2,7 +2,7 @@
 
 ## Current goal
 
-本輪 engineering work 已完整收尾：remote-stage transport、versioned e2e artifact、`core-v20260320-2` tag、release artifacts、commit 與 push 都已完成。此 handoff 現在主要作為 closure snapshot，並補記 2026-03-19 兩份 baseline supporting docs 已降級為 archive。
+本輪在既有 Scheme A closure 基礎上，又補上了 downstream / rebuild bootstrap hardening：新專案最小依賴已明文化，並新增可執行的 `install_workflow_prereqs.sh` 來檢查與安裝 `git`、`python+venv`、`node`、`npm`、`codex`、`copilot`、`bwrap`。`post_create.sh` 與 terminal tooling 安裝流程也已接上這層檢查，因此目前剩下的只有把這批新增的 bootstrap / dependency 文檔與腳本提交並 push。
 
 ## Current branch
 
@@ -15,18 +15,26 @@ main
 
 ## Files touched
 
+- `.agent/PORTABLE_WORKFLOW.md`
+- `.agent/runtime/scripts/devcontainer/post_create.sh`
+- `.agent/runtime/scripts/install_workflow_prereqs.sh`
+- `.agent/runtime/scripts/vscode/install_terminal_tooling.sh`
+- `.agent/runtime/tools/vscode_terminal_pty/README.md`
 - `.agent/runtime/scripts/workflow_core_contracts.py`
 - `.agent/runtime/scripts/workflow_core_manifest.py`
 - `.agent/runtime/scripts/workflow_core_sync_apply.py`
 - `.agent/runtime/scripts/workflow_core_sync_stage.py`
 - `core_ownership_manifest.yml`
 - `doc/AGENT_WORKFLOW_TEMPLATE_UPSTREAM.md`
+- `doc/NEW_MACHINE_SETUP.md`
 - `maintainers/chat/handoff/core-overlay/cli-spec.md`
 - `maintainers/chat/handoff/core-overlay/README.md`
 - `maintainers/chat/handoff/core-overlay/remote-stage-e2e-core-v20260320-2.md`
 - `maintainers/chat/handoff/core-overlay/remote-stage-e2e-core-v20260320-2.json`
 - `maintainers/chat/handoff/core-overlay/daily-sync-sop.md`
 - `maintainers/chat/handoff/core-overlay/sync-checklist.md`
+- `maintainers/index.md`
+- `maintainers/new-project-core-overlay-sop.md`
 - `maintainers/release_artifacts/workflow-core-release-core-v20260320-2.metadata.json`
 - `maintainers/release_artifacts/workflow-core-release-core-v20260320-2.md`
 - `maintainers/release_artifacts/workflow-core-release-core-v20260320-2.json`
@@ -75,12 +83,33 @@ main
 	- `maintainers/release_artifacts/workflow-core-release-core-v20260320-2.metadata.json`
 	- `maintainers/release_artifacts/workflow-core-release-core-v20260320-2.md`
 	- `maintainers/release_artifacts/workflow-core-release-core-v20260320-2.json`
+- 新增 downstream 最小依賴檢查/安裝腳本：`.agent/runtime/scripts/install_workflow_prereqs.sh`。
+- `install_workflow_prereqs.sh` 目前會檢查並在環境允許時安裝：
+	- `git`
+	- `python` / `python3` with `venv`
+	- `node`
+	- `npm`
+	- `codex`
+	- `copilot`
+	- `bwrap`（Linux / Dev Container）
+- `post_create.sh` 現在會先呼叫 `install_workflow_prereqs.sh`，再做 `.venv` / `uv` / terminal tooling bootstrap，因此 rebuild 後不再只靠 PTY preflight 才發現 CLI 缺失。
+- `install_terminal_tooling.sh` 現在會先檢查 `codex` / `copilot`，若缺失且環境具備 npm global install 條件或 passwordless sudo，會自動安裝對應 CLI，再安裝 PTY / fallback extension symlink。
+- `doc/NEW_MACHINE_SETUP.md`、`.agent/PORTABLE_WORKFLOW.md` 與 `maintainers/new-project-core-overlay-sop.md` 已同步補上「新專案最小依賴」與 `install_workflow_prereqs.sh` 的操作方式。
+- `maintainers/new-project-core-overlay-sop.md` 已補成目前 Scheme A 的新專案啟動說明：第一次 bootstrap 用 `workflow_core_export_materialize.py --source-ref core-v20260320-2`，後續更新走 `sync stage -> precheck -> apply -> verify`。
+- shell-level 驗證已完成：
+	- `bash -n .agent/runtime/scripts/install_workflow_prereqs.sh`
+	- `bash -n .agent/runtime/scripts/devcontainer/post_create.sh`
+	- `bash -n .agent/runtime/scripts/vscode/install_terminal_tooling.sh`
+- 實際執行驗證已完成：
+	- `bash .agent/runtime/scripts/install_workflow_prereqs.sh --check-only` 回 `Minimum workflow dependencies are ready.`
+	- `bash .agent/runtime/scripts/vscode/install_terminal_tooling.sh` 已正確辨識目前容器內既有的 `codex` / `copilot` 路徑，不再直接以 CLI 缺失警告開場
 
 ## Current stage
 
 - remote-stage wrapper、warning gate 修正、docs 對齊、versioned e2e artifact、release artifacts 與遠端推送都已完成。
 - `core-v20260320-2` 已存在並指向 `56b4a27`；`main` 已前進到後續 release-record commit，release artifacts 已納入版本控制。
 - 2026-03-19 兩份 baseline supporting docs 已移入 `maintainers/chat/archive/`；active truth 已收斂回 repo root manifest 與 `maintainers/chat/handoff/core-overlay/`。
+- 目前 working tree 剩下的變更只屬於 bootstrap / dependency hardening：最小依賴檢查腳本、post-create / terminal tooling 自動安裝、以及新專案 SOP / portable guide / new-machine setup 文檔同步。
 
 ## What was rejected
 
@@ -93,7 +122,7 @@ main
 
 ## Next exact prompt
 
-請先讀 `maintainers/chat/handoff/2026-03-20-scheme-a-implementation-handoff.md`，再確認 `core-v20260320-2`、`maintainers/release_artifacts/workflow-core-release-core-v20260320-2.*`，以及 `maintainers/chat/archive/2026-03-19-core-ownership-manifest-v1.md` / `2026-03-19-subtree-mutable-path-split-checklist.md` 都已存在。若下一步要延伸工作，應聚焦新的 curated scope 或後續 transport governance，而不是再把 2026-03-19 baseline docs 當 active spec。
+請先讀 `maintainers/chat/handoff/2026-03-20-scheme-a-implementation-handoff.md`，再確認 `.agent/runtime/scripts/install_workflow_prereqs.sh`、`.agent/runtime/scripts/devcontainer/post_create.sh`、`.agent/runtime/scripts/vscode/install_terminal_tooling.sh`、`doc/NEW_MACHINE_SETUP.md` 與 `maintainers/new-project-core-overlay-sop.md` 的內容。若下一步要延伸工作，應聚焦把這套最小依賴檢查帶進更正式的 downstream bootstrap automation，或補對應 regression coverage。
 
 ## Risks
 
@@ -101,6 +130,8 @@ main
 - `core_ownership_manifest.yml` 的 curated package 清單已比 2026-03-19 初稿更前進；後續若 skills tree 再變動，仍要防止 `builtin_core_packages`、`review_required_package_dirs` 與 `export_profiles.curated-core-v1` 漂移。
 - release artifacts 現在已 versioned；未來每次 release chain 都應保持 artifact 產出位置、檔名規則與 git-tracked 歷史一致。
 - `maintainers/chat/archive/2026-03-19-core-ownership-manifest-v1.md` 與 `2026-03-19-subtree-mutable-path-split-checklist.md` 已降級為歷史基線；active truth 應以 repo root `core_ownership_manifest.yml` 與 `maintainers/chat/handoff/core-overlay/` 現行文件為準。
+- `install_workflow_prereqs.sh` 目前的自動安裝策略依賴 `apt-get` 與 root / passwordless `sudo`，以及 npm global install 條件；若下游環境沒有這些能力，腳本仍會正確報缺，但不保證自動補齊。
+- 目前最小依賴檢查已落在 shell 腳本與 maintainer 文檔，但還沒有專門的 automated regression test 覆蓋 bootstrap dependency installer 的分支行為。
 
 ## Verification status
 
@@ -119,3 +150,6 @@ main
 - 已驗證：遠端 stale branches 已清除。
 - 已驗證：release artifacts 已提交到 `main`，而 `core-v20260320-2` tag 已推到遠端。
 - 已驗證：2026-03-19 兩份 baseline supporting docs 已移入 `maintainers/chat/archive/`，active 索引與 core-overlay 文件引用已同步更新。
+- 已驗證：`install_workflow_prereqs.sh --check-only` 在目前 dev container 內會正確檢查並回報所有最小依賴均存在。
+- 已驗證：`install_terminal_tooling.sh` 在目前 dev container 內會正確辨識既有 `codex` / `copilot`，並在 CLI 已存在時直接進入 extension 安裝，不再先報缺失警告。
+- 尚未完成：把這批 bootstrap / dependency hardening 變更提交並 push。
