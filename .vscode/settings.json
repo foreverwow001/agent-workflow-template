@@ -173,11 +173,23 @@
   "github.copilot.advanced": {
     "debug.enableTerminalCommands": true
   },
+  // ====== Terminal PTY primary / fallback secondary ======
+  // Keep PTY as the default workflow runtime. Sessions should be started explicitly by the workflow.
+  "ivyhouseTerminalPty.autoStartCodex": true,
+  "ivyhouseTerminalPty.autoStartCopilot": true,
+  "ivyhouseTerminalPty.copilotCommand": "/home/vscode/.vscode-server-insiders/data/User/globalStorage/github.copilot-chat/copilotCli/copilot",
+  "ivyhouseTerminalPty.captureDir": ".service/terminal_capture",
+  // Fallback remains opt-in. The bridge is on-demand and should not be treated as the primary path.
+  "ivyhouseTerminalFallback.captureDir": ".service/terminal_capture",
+  "ivyhouseTerminalFallback.copilotCommand": "/home/vscode/.vscode-server-insiders/data/User/globalStorage/github.copilot-chat/copilotCli/copilot",
+  "ivyhouseTerminalFallback.bridgePort": 8765,
   "python-envs.pythonProjects": [
     {
       "path": "",
       "envManager": "ms-python.python:venv",
       "packageManager": "ms-python.python:pip"
     }
-  ]
+  ],
+  "github.copilot.chat.responsesApiReasoningEffort": "high",
+  "workbench.externalBrowser": "chrome"
 }

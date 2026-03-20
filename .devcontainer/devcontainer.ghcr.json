@@ -1,5 +1,5 @@
 {
-  "name": "Ivyhousetw-META (GHCR pinned devcontainer image)",
+  "name": "agent-workflow-template (GHCR accelerated mode)",
   "image": "ghcr.io/foreverjojo/ivyhousetw-meta-devcontainer@sha256:6d0aeea0a6f6c2d46ee15b32013886b79053b252578bd3782e2787a7e9c7b040",
   "features": {},
   "containerEnv": {
@@ -14,7 +14,7 @@
     "vscode": {
       "settings": {
         "terminal.integrated.defaultProfile.linux": "bash",
-        "python.defaultInterpreterPath": "/workspaces/Ivyhousetw-META/.venv/bin/python",
+        "python.defaultInterpreterPath": "/workspaces/${localWorkspaceFolderBasename}/.venv/bin/python",
         "python.terminal.activateEnvironment": false
       },
       "extensions": [
@@ -49,19 +49,14 @@
         "usernamehw.errorlens",
         "vscode-icons-team.vscode-icons",
         "yzhang.markdown-all-in-one",
-        "sst-dev.opencode",
-        "ivyhouse-local.ivyhouse-terminal-injector",
-        "ivyhouse-local.ivyhouse-terminal-monitor",
-        "ivyhouse-local.ivyhouse-terminal-orchestrator"
+        "ivyhouse-local.ivyhouse-terminal-pty",
+        "ivyhouse-local.ivyhouse-terminal-fallback"
       ]
     }
   },
   "remoteUser": "vscode",
-  "workspaceFolder": "/workspaces/Ivyhousetw-META",
-  "mounts": [
-    "source=${localWorkspaceFolder},target=/workspaces/Ivyhousetw-META,type=bind,consistency=cached"
-  ],
-    "postCreateCommand": "bash -lc 'set -euo pipefail; cd /workspaces/Ivyhousetw-META; if [ ! -d .venv ]; then python -m venv .venv; fi; . .venv/bin/activate; python -m pip install -U pip; UVV=\"${UV_VERSION:-0.5.24}\"; python -m pip install --no-cache-dir \"uv==${UVV}\"; if [ -f uv.lock ]; then uv sync --frozen --extra dev; else uv pip install -r requirements.txt -r requirements-dev.txt; fi; bash scripts/vscode/install_terminal_orchestrator.sh || true'",
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+  "postCreateCommand": "bash .agent/runtime/scripts/devcontainer/post_create.sh",
   "runArgs": [
     "--add-host=host.docker.internal:host-gateway"
   ]

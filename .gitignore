@@ -72,6 +72,7 @@ Thumbs.db
 uploaded_media/
 temp/
 tmp/
+maintainers/chat/*.json
 # ---- workflow runtime (template defaults) ----
 # Agent task locks
 .agent/active_task.lock
@@ -93,4 +94,3 @@ tmp/
 !.vscode/settings.json
 !.vscode/extensions.json
 !.vscode/tasks.json
-

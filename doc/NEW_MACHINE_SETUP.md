@@ -1,84 +1,108 @@
-﻿# 新電腦一鍵開工（Ivyhousetw-META）
+﻿# 新電腦開工指南（agent-workflow-template）
 
-目標：回台灣換電腦後，直接用 Dev Container 開專案即可開始工作，不再依賴本機 Python/.venv/.python311。
+目標：在公司電腦、家裡電腦或新機上，用同一份 repo 快速重建一致的 VS Code + Dev Container 開發環境。
 
-## 0) 先確認 Git 狀態
+## 1. 一次性準備
 
-1. 先把目前這台電腦的變更 commit + push（至少要包含 `.devcontainer/` 與文件更新）。
-2. 確認 `uv.lock` 有被 commit（用來鎖住依賴版本，確保新電腦環境一致）。
+1. 安裝 VS Code 或 VS Code Insiders
+2. 安裝 Docker Desktop（Windows / macOS）或 Docker Engine（Linux）
+3. 安裝 Dev Containers extension（Microsoft）
+4. 用 Git clone 這個 repo
 
-## 1) 新電腦準備（一次性）
+## 2. 預設開工方式：Dockerfile 標準模式
 
-1. 安裝 VS Code
-2. 安裝 Docker Desktop（Windows）
-3. VS Code 安裝 Dev Containers extension（Microsoft）
-4. Clone 專案到本機資料夾
+1. 在 VS Code 打開 repo
+2. 執行 `Dev Containers: Reopen in Container`
+3. VS Code 會讀取 `.devcontainer/devcontainer.json`
+4. 這個主入口會以 `.devcontainer/Dockerfile` 建立容器
+5. 容器建立後會自動執行 `.agent/runtime/scripts/devcontainer/post_create.sh`
 
-## 2) 用 Dev Container 開專案（主要流程）
+`post_create.sh` 會處理：
 
-1. VS Code 打開專案資料夾
-2. `Ctrl+Shift+P` → `Dev Containers: Reopen in Container`
-3. 第一次建立容器會花一點時間
-4. 容器建立完後會自動執行依賴安裝（`.devcontainer/devcontainer.json` 的 `postCreateCommand`）
+- 建立 `.venv`
+- 安裝固定版 `uv`
+- 若 repo 內存在依賴清單，則安裝依賴
+- 安裝本 repo 內建的 local terminal tooling（PTY primary、fallback secondary，legacy 相容套件暫時保留）
 
-> 如果你看到依賴安裝失敗，請先確認 `uv.lock` 是否存在且已進版控；否則會走 `requirements.txt` 路徑。
->
-> ✅ 建議在新電腦先跑一次可機械化檢查（不修改系統）：
-> - `python scripts/portable/verify_restore_state.py`
+> 這個 template 本身不強制依賴 `uv.lock` 或 `requirements*.txt`。若你之後把 template 套用到自己的專案，再把自己的依賴清單加入版控即可。
 
-> 若你要追求容器層「完全一致」：portable 腳本會自動執行 `pin_devcontainer_image.py`，或你也可手動執行：
-> - `python scripts/portable/pin_devcontainer_image.py`
+## 3. 可選加速方式：GHCR 預建 image
 
-## 3) 啟動本機開發（容器內）
+若你是維護者本人，想縮短容器 build 時間，可改用 GHCR 加速模式。
 
-### 3.0 Terminal extensions 初始化（建議先做）
+加速模式設定檔：
 
-在容器內執行：
+- `.devcontainer/devcontainer.ghcr.json`
+
+建議做法：
+
+- 優先使用本機 repo override 方式，不要直接把 repo 內主入口改髒
+- 切換方式與注意事項請看：`maintainers/devcontainer_modes.md`
+
+## 4. 容器建立後建議檢查
+
+1. 確認 VS Code 左下角已進入 Dev Container
+2. 在容器內執行：
 
 ```bash
-bash scripts/vscode/install_terminal_orchestrator.sh
+bash .agent/runtime/scripts/vscode/install_terminal_tooling.sh
 ```
 
-完成後在 VS Code 執行 `Developer: Reload Window`。
+3. 執行 `Developer: Reload Window`
 
-若要啟用 Monitor 的 Proposed API 主路徑，請在 Windows 端 runtime `argv.json`（例如 `%APPDATA%\\Code - Insiders\\User\\argv.json`）加入：
+4. 建議再跑一次 PTY-primary preflight：
+
+```bash
+python .agent/runtime/scripts/vscode/workflow_preflight_check.py --require-pty --allow-pty-cold-start --json
+```
+
+若這台機器之後需要承接 fallback runtime，也建議再跑：
+
+```bash
+python .agent/runtime/scripts/vscode/workflow_preflight_check.py --require-fallback --json
+```
+
+PTY 主路徑本身**不要求**你額外設定 runtime `argv.json`。
+
+fallback-ready 現在不要求 Proposed API 一定是唯一可用路徑；若 shell integration fallback stream 已掛上，加上 bridge healthz、token 與 artifact compatibility 正常，preflight 仍可回 ready。
+
+只有在你想讓 fallback runtime 優先使用 Proposed API capture，而不是 shell integration fallback stream 時，才需要在本機 VS Code 的 `argv.json` 加入：
 
 ```json
 {
   "enable-proposed-api": [
-    "ivyhouse-local.ivyhouse-terminal-monitor",
-    "ivyhouse-local.ivyhouse-terminal-orchestrator"
+    "ivyhouse-local.ivyhouse-terminal-fallback"
   ]
 }
 ```
 
-儲存後完整關閉 VS Code 再重啟。
+儲存後完整關閉並重新開啟 VS Code。
 
-- Streamlit：
-  - `streamlit run app.py`
+## 5. 換機時不要拿來同步的內容
 
-> `main.py` 是 Cloud Run 用的 Flask wrapper；本機開發通常直接跑 `app.py` 即可。
-
-## 4) Secrets / 憑證（不要進版控）
-
-本專案用到的敏感資訊不要 commit：
-
-- `ifp.env`：本機/容器開發用環境變數（請用 `ifp.env.example` 生成）
-- `secrets/*.json`：GCP Service Account key（如果需要）
-
-建議做法：
-
-1. 在新電腦複製 `ifp.env.example` → `ifp.env`，填入非敏感的設定（API Key 請走 Secret Manager 或 OS 環境變數）。
-2. `GOOGLE_APPLICATION_CREDENTIALS` 指向 `secrets/your-service-account-key.json`（檔案用安全方式移轉，不要丟到 Git）。
-
-> 容器內環境變數注入：本 repo 已在 `.devcontainer/devcontainer.json` 設定 `remoteEnv`（從本機 `localEnv` 注入）。
-
-## 5) 建議：避免把本機環境資料夾當成「可重現」
-
-以下資料夾不應作為「可移植環境」來源（換電腦會失效/不一致）：
+以下內容不應當成環境還原來源：
 
 - `.venv/`
-- `.python311/`
 - `.pytest_cache/`
-- `logs/`（runtime）
-- `history/`（除非你希望連歷史產物也一併帶走）
+- `.service/`
+- 任何本機 token / secrets
+
+應同步的是：
+
+- repo 內容
+- `.devcontainer/` 設定
+- VS Code Settings Sync
+- 必要時的 maintainer handoff 摘要
+
+補充：
+
+- VS Code Settings Sync 主要同步的是編輯器偏好，不是把同一段 GitHub Copilot Chat session 原生搬到另一台電腦。
+- Remote / Dev Container 視窗內的狀態仍要在每台機器各自建立，因此換機後還是要重新 `Reopen in Container`，必要時重跑 `post_create.sh` 與 terminal tooling 安裝。
+
+## 6. 若你同時維護 chat 交接
+
+- GitHub Copilot Chat 目前不應假設能在公司與家裡兩台電腦間無縫續聊同一段 session。
+- 可提交摘要：`maintainers/chat/handoff/`
+- 原始 export JSON：`maintainers/chat/*.json`（本機 / OneDrive 保存，不提交）
+
+詳情請看：`maintainers/chat/README.md` 與 `doc/HOME_OFFICE_SWITCH_SOP.md`
