@@ -14,6 +14,7 @@
 ## 📚 維護文件
 
 - [devcontainer_modes.md](devcontainer_modes.md) - 雙軌 Dev Container 模式與切換方式
+- [new-project-core-overlay-sop.md](new-project-core-overlay-sop.md) - 用目前已落地的 Scheme A 啟動新 downstream 專案的 maintainer SOP
 - [archive/2026-03-18-workflow-optimization-plan.md](archive/2026-03-18-workflow-optimization-plan.md) - MT-003 `/dev` workflow 文件收斂的關帳紀錄與歷史計畫快照
 - [archive/2026-03-19-maintainers-folder-migration-checklist.md](archive/2026-03-19-maintainers-folder-migration-checklist.md) - `maintainers/` 搬遷完成後的正式 migration record
 - [chat/README.md](chat/README.md) - Chat 匯出與交接摘要規範
@@ -49,4 +50,4 @@
 
 ---
 
-**最後更新**: 2026-03-18
+**最後更新**: 2026-03-20

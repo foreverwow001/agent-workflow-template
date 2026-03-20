@@ -1,12 +1,14 @@
 # Subtree Sync 前 Mutable Path 拆分清單
 
 > 建立日期：2026-03-19
-> 狀態：Active Supporting Doc
-> 用途：把目前 repo 中會污染 subtree 的 mutable hotspot 收斂成一份可執行的拆分清單，作為 core sync 落地前的前置工作。
+> 狀態：Archived - superseded by `core_ownership_manifest.yml` and `handoff/core-overlay/*.md`
+> 用途：保留 subtree sync 前 mutable path 拆分與完成判定的歷史基線；active truth 已移到 repo root manifest、portable smoke / projection delivery contract 與 core-overlay active SOP / checklist。
 
 > 先講兩個不可忽略的 framing：
 > 1. 目前 repo 最大的 mutable hotspot 是 `.agent/skills`，不是 `.agent/workflows`。
 > 2. 目前 repo 最大的路徑耦合點是 `AGENT_ENTRY.md` 對 root 下 `./.agent/...` 與 `./doc/...` live path 的直接假設，所以 subtree 只是運輸機制；真正落地時仍要保留 live path，或提供 projection/bootstrap script，把 curated core 投影回這些 live path。
+
+> 2026-03-20 archive note：本文列出的拆分條件 1-8 與 phase 0-4 交付模型均已被現況吸收，包含 projection/bootstrap artifact、portable smoke、mutable skill-state split、local install split、catalog split 與 manifest-backed release/sync contract，因此不再作為 active checklist。
 
 ---
 

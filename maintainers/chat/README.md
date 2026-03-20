@@ -23,10 +23,10 @@
 
 ### Active Supporting Docs
 
-- `2026-03-19-core-ownership-manifest-v1.md`
-  - subtree/core-overlay 方案下的第一版 core ownership manifest 欄位與 current-repo baseline
-- `2026-03-19-subtree-mutable-path-split-checklist.md`
-  - subtree sync 前必做的 mutable path 拆分清單與完成判定
+目前 active chat 區不再保留額外 dated supporting docs；core / overlay 現行 truth 已收斂到下列兩個面：
+
+- repo root `core_ownership_manifest.yml`
+- `handoff/core-overlay/` 內的 active SOP / checklist / CLI spec / validation records
 
 > MT-003 `/dev` workflow 文件收斂工作已正式結案；其現況流程、friction 地圖、rotation patch 提案與關帳快照，現已存入 `maintainers/archive/2026-03-18-workflow-optimization-plan.md`，active chat 區不再保留對應 supporting doc。
 
@@ -47,6 +47,10 @@
   - 舊的 preflight migration 設計文；active 入口已回收進 preflight script
 - `archive/2026-03-19-terminal-tooling-archive-checklist.md`
   - 本次 retire `2026-03-13` active set 前使用的短 checklist
+- `archive/2026-03-19-core-ownership-manifest-v1.md`
+  - 2026-03-19 manifest baseline 草案；active truth 已由 repo root `core_ownership_manifest.yml` 與 core-overlay active docs 承接
+- `archive/2026-03-19-subtree-mutable-path-split-checklist.md`
+  - 2026-03-19 mutable split baseline；其完成條件已落入 manifest、projection/bootstrap、portable smoke 與 sync/release wrapper contract
 - `archive/README.md`
   - archive 收錄條件、draft/handoff 收斂規則與刪除門檻
 

@@ -1,10 +1,12 @@
 # Core Ownership Manifest V1 草案
 
 > 建立日期：2026-03-19
-> 狀態：Active Supporting Doc
-> 用途：定義未來 `core_ownership_manifest.yml` 的第一版欄位、格式與目前 repo 的基線內容，作為 subtree sync 前的 ownership baseline。
+> 狀態：Archived - superseded by `core_ownership_manifest.yml` and `handoff/core-overlay/*.md`
+> 用途：保留 `core_ownership_manifest.yml` 第一版 schema/baseline 的歷史快照；active truth 已移到 repo root manifest 與 core-overlay active SOP / checklist / CLI spec。
 >
 > 這份文件處理的是 **manifest schema + current-repo baseline**，不是實作 patch，也不是正式 archive/retire 決策文。
+
+> 2026-03-20 archive note：本文列出的 manifest schema、root path contract、projection/bootstrap、verification strategy 與 automation contract 已落入 `core_ownership_manifest.yml` 與 `maintainers/chat/handoff/core-overlay/` 現行文件，因此不再保留 active baseline 角色。
 
 ---
 

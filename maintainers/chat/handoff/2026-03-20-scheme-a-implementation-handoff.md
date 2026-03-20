@@ -2,7 +2,7 @@
 
 ## Current goal
 
-本輪 engineering work 已完成並形成 release source commit `56b4a27 feat: add workflow-core remote sync stage`，`core-v20260320-2` tag 也已建立在該 commit 上；release chain 已成功產出新的 metadata / notes artifacts。剩餘動作只差最後一步：把 `maintainers/release_artifacts/workflow-core-release-core-v20260320-2.{metadata.json,md,json}` 與本 handoff 的最終狀態一起提交並 push。
+本輪 engineering work 已完整收尾：remote-stage transport、versioned e2e artifact、`core-v20260320-2` tag、release artifacts、commit 與 push 都已完成。此 handoff 現在主要作為 closure snapshot，並補記 2026-03-19 兩份 baseline supporting docs 已降級為 archive。
 
 ## Current branch
 
@@ -78,9 +78,9 @@ main
 
 ## Current stage
 
-- remote-stage wrapper、warning gate 修正、docs 對齊、versioned e2e artifact 與 release source commit 都已完成。
-- `core-v20260320-2` 已存在並指向 `56b4a27`，release metadata / notes 也已生成，但這三個 release artifact 尚未 commit。
-- 目前最後剩餘步驟只有：提交 release artifacts，然後 push `main` 與 tag `core-v20260320-2`。
+- remote-stage wrapper、warning gate 修正、docs 對齊、versioned e2e artifact、release artifacts 與遠端推送都已完成。
+- `core-v20260320-2` 已存在並指向 `56b4a27`；`main` 已前進到後續 release-record commit，release artifacts 已納入版本控制。
+- 2026-03-19 兩份 baseline supporting docs 已移入 `maintainers/chat/archive/`；active truth 已收斂回 repo root manifest 與 `maintainers/chat/handoff/core-overlay/`。
 
 ## What was rejected
 
@@ -93,16 +93,14 @@ main
 
 ## Next exact prompt
 
-請先讀 `maintainers/chat/handoff/2026-03-20-scheme-a-implementation-handoff.md`，再確認 `maintainers/release_artifacts/workflow-core-release-core-v20260320-2.metadata.json`、`.md`、`.json` 三個 artifacts 與 tag `core-v20260320-2` 都存在。接下來只要把 release artifacts 連同 handoff 最終狀態提交到 `main`，然後 push branch 和 tag 即可。
+請先讀 `maintainers/chat/handoff/2026-03-20-scheme-a-implementation-handoff.md`，再確認 `core-v20260320-2`、`maintainers/release_artifacts/workflow-core-release-core-v20260320-2.*`，以及 `maintainers/chat/archive/2026-03-19-core-ownership-manifest-v1.md` / `2026-03-19-subtree-mutable-path-split-checklist.md` 都已存在。若下一步要延伸工作，應聚焦新的 curated scope 或後續 transport governance，而不是再把 2026-03-19 baseline docs 當 active spec。
 
 ## Risks
 
-- `core-v20260320-2` 雖已建立，但 release artifacts 目前尚未 commit；若現在中斷，tag 雖可用，repo 內的 release history 仍缺這一版的 metadata / notes 記錄。
 - 新的 `workflow_core_sync_stage.py` 目前採用「fetch remote ref -> 讀 source-ref manifest -> materialize curated export tree 到 staging root」模型；這已滿足 phase-2 remote transport，但若未來要與真正 `git subtree` 原生命令完全對齊，仍可能需要再定義額外的 transport owner / ref naming governance。
-- release history 現在已產出 `core-v20260320-2` artifacts，但仍需透過最後的 artifact commit 才會在 `main` 上形成完整可追溯紀錄。
 - `core_ownership_manifest.yml` 的 curated package 清單已比 2026-03-19 初稿更前進；後續若 skills tree 再變動，仍要防止 `builtin_core_packages`、`review_required_package_dirs` 與 `export_profiles.curated-core-v1` 漂移。
 - release artifacts 現在已 versioned；未來每次 release chain 都應保持 artifact 產出位置、檔名規則與 git-tracked 歷史一致。
-- `maintainers/chat/2026-03-19-core-ownership-manifest-v1.md` 與 `2026-03-19-subtree-mutable-path-split-checklist.md` 仍是 2026-03-19 基線文件；它們的 framing 仍有效，但內容已落後目前 manifest curated scope 與已完成項目，後續若持續沿用，最好補一份 archive / delta note。
+- `maintainers/chat/archive/2026-03-19-core-ownership-manifest-v1.md` 與 `2026-03-19-subtree-mutable-path-split-checklist.md` 已降級為歷史基線；active truth 應以 repo root `core_ownership_manifest.yml` 與 `maintainers/chat/handoff/core-overlay/` 現行文件為準。
 
 ## Verification status
 
@@ -119,4 +117,5 @@ main
 - 已驗證：`workflow_core_release_create.py --release-ref core-v20260320-2 --source-ref HEAD` 為 `pass`，並已建立 tag 與 metadata artifact。
 - 已驗證：`workflow_core_release_publish_notes.py --release-ref core-v20260320-2 --metadata ...` 為 `pass`，並已建立 markdown notes 與 sidecar JSON。
 - 已驗證：遠端 stale branches 已清除。
-- 尚未完成：提交新的 release artifacts，並將 `main` 與 tag `core-v20260320-2` 推到遠端。
+- 已驗證：release artifacts 已提交到 `main`，而 `core-v20260320-2` tag 已推到遠端。
+- 已驗證：2026-03-19 兩份 baseline supporting docs 已移入 `maintainers/chat/archive/`，active 索引與 core-overlay 文件引用已同步更新。

@@ -21,8 +21,8 @@
 這份文件預設搭配下列文件一起看：
 
 - `daily-sync-sop.md`
-- `../2026-03-19-core-ownership-manifest-v1.md`
-- `../2026-03-19-subtree-mutable-path-split-checklist.md`
+- repo root `core_ownership_manifest.yml`
+- `remote-stage-e2e-core-v20260320-2.md`
 
 ---
 

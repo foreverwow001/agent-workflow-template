@@ -16,8 +16,8 @@
 
 若以上任一條件未完成，請先回到：
 
-- `2026-03-19-core-ownership-manifest-v1.md`
-- `2026-03-19-subtree-mutable-path-split-checklist.md`
+- repo root `core_ownership_manifest.yml`
+- `sync-checklist.md`
 
 這份 SOP 不處理「怎麼做第一次拆分」，只處理拆分後的日常運作。
 
