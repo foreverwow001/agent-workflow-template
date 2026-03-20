@@ -14,7 +14,7 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
-from workflow_core_contracts import evaluate_manifest_contract, write_json_file  # noqa: E402
+from workflow_core_contracts import default_release_artifacts_dir, evaluate_manifest_contract, write_json_file  # noqa: E402
 from workflow_core_manifest import manifest_default_path  # noqa: E402
 
 
@@ -30,9 +30,9 @@ def load_metadata(metadata_path: Path | None) -> dict:
     return json.loads(metadata_path.read_text(encoding="utf-8"))
 
 
-def resolve_output_paths(release_ref: str, output_path: Path | None) -> tuple[Path | None, Path | None]:
+def resolve_output_paths(repo_root: Path, release_ref: str, output_path: Path | None) -> tuple[Path | None, Path | None]:
     if output_path is None:
-        return None, None
+        output_path = default_release_artifacts_dir(repo_root)
     if output_path.suffix.lower() == ".md":
         markdown_path = output_path
     else:
@@ -91,7 +91,7 @@ def run_release_publish_notes(
     notes = ["generated workflow-core release notes from canonical manifest"]
     status = "warn" if requires_manual_followup else "pass"
 
-    markdown_path, json_path = resolve_output_paths(release_ref, output_path)
+    markdown_path, json_path = resolve_output_paths(repo_root, release_ref, output_path)
     if markdown_path is not None:
         content = render_release_note(
             release_ref=release_ref,

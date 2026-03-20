@@ -160,6 +160,25 @@ class WorkflowCoreWrapperCommandsTest(unittest.TestCase):
         self.assertTrue(any(item.endswith(".metadata.json") for item in result["created_artifacts"]))
         self.assertTrue(tag_proc.stdout.strip())
 
+    def test_release_create_defaults_metadata_to_maintainer_release_artifacts(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo_root = Path(temp_dir)
+            init_git_repo(repo_root)
+            write_manifest(repo_root)
+            write_runtime_scripts(repo_root)
+            create_required_live_paths(repo_root, include_index=True)
+            commit_all(repo_root, "seed")
+
+            result = self.release_create.run_release_create(
+                repo_root=repo_root,
+                manifest_path=repo_root / "core_ownership_manifest.yml",
+                release_ref="core-v20260319-defaults",
+            )
+
+            metadata_path = next(Path(item) for item in result["created_artifacts"] if item.endswith(".metadata.json"))
+            self.assertEqual(metadata_path.parent, repo_root / "maintainers" / "release_artifacts")
+            self.assertTrue(metadata_path.exists())
+
     def test_release_create_metadata_does_not_collide_with_publish_notes_sidecar(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             repo_root = Path(temp_dir)
@@ -215,6 +234,24 @@ class WorkflowCoreWrapperCommandsTest(unittest.TestCase):
         self.assertEqual(result["status"], "warn")
         self.assertTrue(result["requires_manual_followup"])
         self.assertTrue(output_exists)
+
+    def test_release_publish_notes_defaults_to_maintainer_release_artifacts(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo_root = Path(temp_dir)
+            write_manifest(repo_root)
+            write_runtime_scripts(repo_root)
+            create_required_live_paths(repo_root, include_index=True)
+
+            result = self.release_publish.run_release_publish_notes(
+                repo_root=repo_root,
+                manifest_path=repo_root / "core_ownership_manifest.yml",
+                release_ref="core-v20260319-defaults",
+            )
+
+            markdown_path = Path(result["output_path"])
+            self.assertEqual(markdown_path.parent, repo_root / "maintainers" / "release_artifacts")
+            self.assertTrue(markdown_path.exists())
+            self.assertTrue(markdown_path.with_suffix(".json").exists())
 
     def test_sync_apply_restores_managed_file_from_release_ref(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

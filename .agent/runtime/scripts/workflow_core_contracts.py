@@ -196,3 +196,7 @@ def write_json_file(target_path: Path, payload: dict[str, Any]) -> str:
     target_path.parent.mkdir(parents=True, exist_ok=True)
     target_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     return str(target_path.resolve())
+
+
+def default_release_artifacts_dir(repo_root: Path) -> Path:
+    return repo_root / "maintainers" / "release_artifacts"

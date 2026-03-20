@@ -14,7 +14,7 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
-from workflow_core_contracts import git_run, ref_exists, resolve_ref, write_json_file  # noqa: E402
+from workflow_core_contracts import default_release_artifacts_dir, git_run, ref_exists, resolve_ref, write_json_file  # noqa: E402
 from workflow_core_manifest import manifest_default_path  # noqa: E402
 from workflow_core_release_precheck import run_release_precheck  # noqa: E402
 
@@ -27,7 +27,7 @@ EXIT_ERROR = 30
 
 def default_output_path(repo_root: Path, release_ref: str, output: Path | None) -> Path | None:
     if output is None:
-        return None
+        output = default_release_artifacts_dir(repo_root)
     if output.suffix.lower() == ".json":
         return output
     safe_ref = re.sub(r"[^A-Za-z0-9._-]+", "-", release_ref)
