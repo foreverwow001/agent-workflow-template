@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import shutil
 import sys
 from pathlib import Path
 
@@ -14,11 +15,13 @@ if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
 from workflow_core_manifest import (  # noqa: E402
+    get_managed_patterns,
     get_projection_artifact_path,
     get_required_live_paths,
     load_manifest,
     manifest_default_path,
     normalize_path,
+    path_matches_pattern,
     pattern_anchor,
 )
 
@@ -56,12 +59,67 @@ def bootstrap_overlay_index(repo_root: Path) -> str | None:
     return normalize_path(str(index_path.relative_to(repo_root)))
 
 
-def run_projection_stub(repo_root: Path, manifest_path: Path, bootstrap_overlay_index_file: bool = False) -> dict:
+def ensure_required_live_path_anchors(repo_root: Path, manifest: dict) -> list[str]:
+    created_paths: list[str] = []
+    for pattern in get_required_live_paths(manifest):
+        anchor = pattern_anchor(pattern)
+        if not anchor:
+            continue
+        target = repo_root / anchor
+        if target.exists():
+            continue
+        if any(char in pattern for char in "*?[") or pattern.endswith("/**"):
+            target.mkdir(parents=True, exist_ok=True)
+            created_paths.append(normalize_path(str(target.relative_to(repo_root))))
+    return created_paths
+
+
+def select_managed_paths(source_root: Path, manifest: dict) -> list[str]:
+    managed_patterns = get_managed_patterns(manifest)
+    selected_paths: list[str] = []
+    for path in source_root.rglob("*"):
+        if not path.is_file():
+            continue
+        rel_path = normalize_path(str(path.relative_to(source_root)))
+        if any(path_matches_pattern(rel_path, pattern) for pattern in managed_patterns):
+            selected_paths.append(rel_path)
+    return sorted(set(selected_paths))
+
+
+def materialize_managed_paths(repo_root: Path, source_root: Path, selected_paths: list[str]) -> list[str]:
+    projected_paths: list[str] = []
+    for rel_path in selected_paths:
+        source_path = source_root / rel_path
+        target_path = repo_root / rel_path
+        if not source_path.exists():
+            continue
+        if source_path.resolve() == target_path.resolve():
+            projected_paths.append(rel_path)
+            continue
+        target_path.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source_path, target_path)
+        projected_paths.append(rel_path)
+    return projected_paths
+
+
+def run_projection(
+    repo_root: Path,
+    manifest_path: Path,
+    source_root: Path | None = None,
+    bootstrap_overlay_index_file: bool = False,
+) -> dict:
     manifest = load_manifest(manifest_path)
     projection_artifact_path = get_projection_artifact_path(manifest)
+    effective_source_root = (source_root or repo_root).resolve()
+    if not effective_source_root.exists():
+        raise FileNotFoundError(f"projection source root does not exist: {effective_source_root}")
+
+    created_paths = ensure_required_live_path_anchors(repo_root, manifest)
+    selected_paths = select_managed_paths(effective_source_root, manifest)
+    projected_paths = materialize_managed_paths(repo_root, effective_source_root, selected_paths)
+
     checks = classify_required_live_paths(repo_root, manifest)
 
-    created_paths: list[str] = []
     missing_paths = list(checks["missing"])
     notes: list[str] = []
 
@@ -74,31 +132,48 @@ def run_projection_stub(repo_root: Path, manifest_path: Path, bootstrap_overlay_
 
     if missing_paths:
         status = "fail"
-        notes.append("projection/bootstrap stub found missing required live paths")
+        notes.append("projection/bootstrap found missing required live paths after materialization")
     elif created_paths:
         status = "warn"
-        notes.append("projection/bootstrap stub created placeholder downstream overlay artifacts")
+        notes.append("projection/bootstrap created placeholder downstream overlay artifacts")
     else:
         status = "pass"
-        notes.append("projection/bootstrap stub validated required live path anchors")
+        notes.append("projection/bootstrap materialized managed live paths and validated required anchors")
 
     return {
         "status": status,
         "repo_root": str(repo_root.resolve()),
         "manifest_path": str(manifest_path.resolve()),
+        "source_root": str(effective_source_root),
         "projection_artifact_path": projection_artifact_path,
         "existing_required_live_paths": checks["existing"],
         "missing_required_live_paths": missing_paths,
         "created_paths": created_paths,
+        "projected_paths": projected_paths,
         "notes": notes,
     }
 
 
+def run_projection_stub(
+    repo_root: Path,
+    manifest_path: Path,
+    bootstrap_overlay_index_file: bool = False,
+    source_root: Path | None = None,
+) -> dict:
+    return run_projection(
+        repo_root=repo_root,
+        manifest_path=manifest_path,
+        source_root=source_root,
+        bootstrap_overlay_index_file=bootstrap_overlay_index_file,
+    )
+
+
 def format_text_report(result: dict) -> str:
     lines = [
-        f"workflow-core projection stub: {result['status']}",
+        f"workflow-core projection: {result['status']}",
         f"repo_root: {result['repo_root']}",
         f"manifest_path: {result['manifest_path']}",
+        f"source_root: {result['source_root']}",
         f"projection_artifact_path: {result['projection_artifact_path']}",
     ]
     lines.append(f"existing_required_live_paths: {len(result['existing_required_live_paths'])}")
@@ -110,6 +185,10 @@ def format_text_report(result: dict) -> str:
     if result["created_paths"]:
         lines.append("created_paths:")
         for item in result["created_paths"]:
+            lines.append(f"  - {item}")
+    if result["projected_paths"]:
+        lines.append("projected_paths:")
+        for item in result["projected_paths"]:
             lines.append(f"  - {item}")
     if result["notes"]:
         lines.append("notes:")
@@ -138,6 +217,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="workflow-core canonical manifest path（預設：<repo-root>/core_ownership_manifest.yml）",
     )
     parser.add_argument(
+        "--source-root",
+        type=Path,
+        default=None,
+        help="可選的 staged/export source root；未指定時直接以 repo-root 當 source",
+    )
+    parser.add_argument(
         "--bootstrap-overlay-index",
         action="store_true",
         help="若 doc/implementation_plan_index.md 缺失，建立最小 placeholder 作為 bootstrap stub",
@@ -155,6 +240,7 @@ def main(argv: list[str] | None = None) -> int:
         result = run_projection_stub(
             repo_root=repo_root,
             manifest_path=manifest_path,
+            source_root=args.source_root.resolve() if args.source_root else None,
             bootstrap_overlay_index_file=bool(args.bootstrap_overlay_index),
         )
     except Exception as exc:

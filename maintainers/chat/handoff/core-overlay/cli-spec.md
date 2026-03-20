@@ -323,12 +323,19 @@
 - `--sync-mode MODE`
   - `direct-root|staging-plus-projection`
 - `--projection-script PATH`
+- `--staging-root PATH`
+  - optional
+  - 用於獨立 downstream repo；指定 staged/export tree root，讓 apply 從 staged tree 載入 managed paths，而不是要求先存在可 fetch 的 release ref
 - `--json`
 
 #### Behavior
 
 - 執行固定 wrapper 的 sync apply
+- 可接受兩條 phase-1 delivery lane：
+  - `release-ref checkout lane`：在同 repo 內直接以 git ref 還原 managed paths
+  - `staging-root lane`：在獨立 downstream repo 中，從 `--staging-root` 指向的 staged/export tree 載入 managed paths
 - 若需要 projection/bootstrap，必須在同一 command 中自動串接
+- 若 `sync precheck` 的 warning 只來自 repo 內 `.workflow-core/staging/**` staged input，本 command 可帶著 manual-review note 繼續 apply
 - projection/bootstrap 的預設 artifact path 應由 manifest 提供，而非各 command 自己定義
 
 #### stdout JSON contract
@@ -369,11 +376,15 @@
   - repeatable
 - `--preflight-command CMD`
 - `--smoke-command CMD`
+- `--staging-root PATH`
+  - optional
+  - 用於獨立 downstream repo；verify 會直接比對 worktree 與 staged/export tree，而不是要求先存在可 fetch 的 release ref
 - `--json`
 
 #### Behavior
 
 - 驗證 sync 後 root live path、入口契約、portable smoke suite 與最小 preflight 是否仍成立
+- 若指定 `--staging-root`，preflight 應接受「managed worktree 已與 staged export tree 對齊」作為 pass，而不是只接受 git ref 比對
 
 #### stdout JSON contract
 
@@ -418,6 +429,11 @@
 ## 5. Manual Review Rules
 
 下列情況可先回 `warn`，但不得默默當 `pass`：
+
+1. downstream repo 內存在 `.workflow-core/staging/**` staged input，且 `sync precheck` 判定這些 path 僅屬 staged export tree、自身不代表 core managed path divergence
+2. downstream 有 overlay-only 變更，但不影響 core managed path
+3. release note 中有 manual migration step，需要操作者確認是否已完成
+4. temporary divergence 已存在，但有明確對應 upstream follow-up，且這次 sync 不碰該路徑
 
 1. 只有 overlay-only path 變更
 2. 只有 state-only path 變更

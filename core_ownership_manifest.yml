@@ -25,7 +25,7 @@ root_path_contract:
     - "doc/"
   delivery_mode: "preserve-root-live-paths"
   projection_strategy: "materialize-curated-core-at-root-or-project-via-bootstrap"
-  projection_script: "required-if-exported-core-is-not-materialized-at-root"
+  projection_script: ".agent/runtime/scripts/workflow_core_projection.py"
   blocking_assumptions:
     - "AGENT_ENTRY.md opens ./.agent/workflows/dev-team.md and ./doc/implementation_plan_index.md directly"
     - "workflow and role docs call .agent/skills/** canonical paths directly"
@@ -263,6 +263,20 @@ managed_paths:
     sync_policy: "subtree-managed"
     downstream_edit_policy: "upstream-only"
     reason: "shared helpers and canonical path resolver code"
+
+  - path: ".agent/skills/__init__.py"
+    kind: "file"
+    ownership: "core"
+    sync_policy: "subtree-managed"
+    downstream_edit_policy: "upstream-only"
+    reason: "packaged skill discovery and curated package registry surface"
+
+  - path: ".agent/skills/INDEX.md"
+    kind: "file"
+    ownership: "core"
+    sync_policy: "subtree-managed"
+    downstream_edit_policy: "upstream-only"
+    reason: "builtin-only curated skill catalog kept stable after mutable split"
 
   - path: ".agent/skills/code-reviewer/**"
     kind: "glob"

@@ -51,6 +51,7 @@ def write_manifest(
     include_unmanaged_pattern: bool = False,
     extra_profile_includes: list[str] | None = None,
     extra_managed_patterns: list[str] | None = None,
+    split_required: list[dict[str, str]] | None = None,
 ) -> None:
     profile_includes = [
         "core_ownership_manifest.yml",
@@ -114,6 +115,14 @@ def write_manifest(
             '      - "test export profile"',
         ]
     )
+
+    if split_required:
+        lines.append('split_required:')
+        for item in split_required:
+            lines.append(f'  - path: "{item["path"]}"')
+            lines.append(f'    recommended_target: "{item["recommended_target"]}"')
+    else:
+        lines.append('split_required: []')
 
     manifest = "\n".join(lines) + "\n"
     (repo_root / "core_ownership_manifest.yml").write_text(manifest, encoding="utf-8")
@@ -208,6 +217,36 @@ class WorkflowCoreExportMaterializeTest(unittest.TestCase):
             )
             self.assertEqual(result["status"], "fail")
             self.assertTrue(any("README.md" in item for item in result["profile_contract_violations"]))
+
+    def test_materialize_keeps_managed_index_even_when_split_required_targets_include_local_overlay(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo_root = Path(temp_dir)
+            init_git_repo(repo_root)
+            write_manifest(
+                repo_root,
+                extra_profile_includes=[".agent/skills/INDEX.md"],
+                extra_managed_patterns=[".agent/skills/INDEX.md"],
+                split_required=[
+                    {
+                        "path": ".agent/skills/INDEX.md",
+                        "recommended_target": ".agent/skills/INDEX.md + .agent/state/skills/INDEX.local.md",
+                    }
+                ],
+            )
+            write_runtime_scripts(repo_root)
+            create_sample_tree(repo_root)
+            (repo_root / ".agent" / "skills" / "INDEX.md").write_text("builtin index\n", encoding="utf-8")
+            commit_all(repo_root, "seed export tree")
+
+            output_dir = repo_root / "exported"
+            result = self.export_materialize.run_export_materialize(
+                repo_root=repo_root,
+                manifest_path=repo_root / "core_ownership_manifest.yml",
+                output_dir=output_dir,
+            )
+
+        self.assertEqual(result["status"], "pass")
+        self.assertIn(".agent/skills/INDEX.md", result["selected_paths"])
 
 
 if __name__ == "__main__":

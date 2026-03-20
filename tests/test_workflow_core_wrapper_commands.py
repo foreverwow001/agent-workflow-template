@@ -280,6 +280,41 @@ class WorkflowCoreWrapperCommandsTest(unittest.TestCase):
         self.assertIn(".agent/workflows/example.md", result["changed_managed_paths"])
         self.assertEqual(restored, "v1\n")
 
+    def test_sync_apply_materializes_managed_paths_from_staging_root(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo_root = Path(temp_dir)
+            init_git_repo(repo_root)
+            write_manifest(repo_root)
+            write_runtime_scripts(repo_root)
+            create_required_live_paths(repo_root, include_index=False)
+            commit_all(repo_root, "seed downstream baseline")
+
+            staging_root = repo_root / ".workflow-core" / "staging"
+            staged_file = staging_root / ".agent" / "workflows" / "example.md"
+            staged_file.parent.mkdir(parents=True, exist_ok=True)
+            staged_file.write_text("from staged export\n", encoding="utf-8")
+
+            result = self.sync_apply.run_sync_apply(
+                repo_root=repo_root,
+                manifest_path=repo_root / "core_ownership_manifest.yml",
+                release_ref="core-v20260320-staging",
+                staging_root=staging_root,
+            )
+            verify_result = self.sync_verify.run_sync_verify(
+                repo_root=repo_root,
+                manifest_path=repo_root / "core_ownership_manifest.yml",
+                release_ref="core-v20260320-staging",
+                staging_root=staging_root,
+            )
+
+            restored = (repo_root / ".agent" / "workflows" / "example.md").read_text(encoding="utf-8")
+
+        self.assertEqual(result["status"], "pass")
+        self.assertTrue(result["projection_ran"])
+        self.assertIn(".agent/workflows/example.md", result["changed_managed_paths"])
+        self.assertEqual(verify_result["status"], "pass")
+        self.assertEqual(restored, "from staged export\n")
+
     def test_sync_verify_passes_with_manifest_backed_checks(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             repo_root = Path(temp_dir)
@@ -327,4 +362,4 @@ class WorkflowCoreWrapperCommandsTest(unittest.TestCase):
         self.assertEqual(apply_result["status"], "pass")
         self.assertEqual(verify_result["status"], "pass")
         self.assertTrue(verify_result["preflight_ok"])
-        self.assertTrue(any("match the requested release ref" in note for note in verify_result["notes"]))
+        self.assertTrue(any("match the target requested release ref" in note for note in verify_result["notes"]))

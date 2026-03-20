@@ -15,7 +15,7 @@ if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
 from workflow_core_contracts import checkout_paths_from_ref, evaluate_manifest_contract, list_files_at_ref, ref_exists  # noqa: E402
-from workflow_core_manifest import manifest_default_path, path_matches_pattern  # noqa: E402
+from workflow_core_manifest import manifest_default_path, normalize_path, path_matches_pattern  # noqa: E402
 from workflow_core_sync_precheck import run_sync_precheck  # noqa: E402
 
 
@@ -34,6 +34,28 @@ def load_projection_module(projection_script: Path):
     return module
 
 
+def normalize_staging_root(repo_root: Path, staging_root: Path | None) -> tuple[Path | None, str | None]:
+    if staging_root is None:
+        return None, None
+    resolved = staging_root.resolve()
+    try:
+        relative = normalize_path(str(resolved.relative_to(repo_root)))
+    except ValueError:
+        relative = None
+    return resolved, relative
+
+
+def precheck_allows_staging_tree_only_warning(precheck: dict, staging_root_rel: str | None) -> bool:
+    if not staging_root_rel or precheck.get("status") != "warn":
+        return False
+    if precheck.get("core_divergence_paths") or precheck.get("overlay_only_paths") or precheck.get("state_only_paths"):
+        return False
+    unclassified_paths = precheck.get("unclassified_paths", [])
+    if not unclassified_paths:
+        return False
+    return all(path == staging_root_rel or path.startswith(staging_root_rel + "/") for path in unclassified_paths)
+
+
 def select_sync_mode(explicit_mode: str | None, projection_artifact_path: str) -> str:
     if explicit_mode:
         return explicit_mode
@@ -46,10 +68,13 @@ def run_sync_apply(
     release_ref: str,
     sync_mode: str | None = None,
     projection_script: Path | None = None,
+    staging_root: Path | None = None,
 ) -> dict:
+    resolved_staging_root, staging_root_rel = normalize_staging_root(repo_root, staging_root)
     contract = evaluate_manifest_contract(repo_root, manifest_path)
     precheck = run_sync_precheck(repo_root=repo_root, release_ref=release_ref, manifest_path=manifest_path)
-    if precheck["status"] != "pass":
+    allow_staging_warning = precheck_allows_staging_tree_only_warning(precheck, staging_root_rel)
+    if precheck["status"] != "pass" and not allow_staging_warning:
         return {
             "status": "fail",
             "repo_root": contract["repo_root"],
@@ -62,7 +87,7 @@ def run_sync_apply(
             "notes": ["sync precheck did not pass; apply aborted", *precheck["notes"]],
         }
 
-    if not ref_exists(repo_root, release_ref):
+    if resolved_staging_root is None and not ref_exists(repo_root, release_ref):
         return {
             "status": "fail",
             "repo_root": contract["repo_root"],
@@ -76,7 +101,15 @@ def run_sync_apply(
         }
 
     resolved_mode = select_sync_mode(sync_mode, contract["projection_artifact_path"])
-    files_at_ref = list_files_at_ref(repo_root, release_ref)
+    if resolved_staging_root is not None:
+        files_at_ref = sorted(
+            normalize_path(str(path.relative_to(resolved_staging_root)))
+            for path in resolved_staging_root.rglob("*")
+            if path.is_file()
+        )
+    else:
+        files_at_ref = list_files_at_ref(repo_root, release_ref)
+
     changed_managed_paths = sorted(
         path
         for path in files_at_ref
@@ -92,12 +125,15 @@ def run_sync_apply(
             "projection_ran": False,
             "changed_managed_paths": [],
             "failed_stage": "select-managed-paths",
-            "notes": ["release ref contains no managed paths to apply"],
+            "notes": ["staged export tree contains no managed paths to apply"] if resolved_staging_root is not None else ["release ref contains no managed paths to apply"],
         }
 
-    checkout_paths_from_ref(repo_root, release_ref, changed_managed_paths)
+    if resolved_staging_root is None:
+        checkout_paths_from_ref(repo_root, release_ref, changed_managed_paths)
     projection_ran = False
-    notes = ["restored managed paths from release ref"]
+    notes = ["restored managed paths from release ref"] if resolved_staging_root is None else ["loaded managed paths from staged export tree"]
+    if allow_staging_warning:
+        notes.append("sync precheck warning was limited to the staged export tree and was ignored for apply")
 
     if resolved_mode == "staging-plus-projection":
         projection_target = projection_script or (repo_root / contract["projection_artifact_path"])
@@ -117,6 +153,7 @@ def run_sync_apply(
         projection_result = projection_module.run_projection_stub(
             repo_root=repo_root,
             manifest_path=manifest_path,
+            source_root=resolved_staging_root,
             bootstrap_overlay_index_file=True,
         )
         projection_ran = True
@@ -190,6 +227,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="同步模式，未指定時依 manifest 自動判定",
     )
     parser.add_argument("--projection-script", type=Path, default=None, help="可選的 projection script override")
+    parser.add_argument("--staging-root", type=Path, default=None, help="可選的 staged/export tree root，適用於獨立 downstream repo sync")
     parser.add_argument("--json", action="store_true", help="輸出 JSON")
     return parser
 
@@ -206,6 +244,7 @@ def main(argv: list[str] | None = None) -> int:
             release_ref=args.release_ref,
             sync_mode=args.sync_mode,
             projection_script=args.projection_script.resolve() if args.projection_script else None,
+            staging_root=args.staging_root.resolve() if args.staging_root else None,
         )
     except Exception as exc:
         if args.json:

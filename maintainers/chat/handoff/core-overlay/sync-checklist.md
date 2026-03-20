@@ -157,11 +157,12 @@
 
 最低責任：
 
-1. 用固定 wrapper 執行 subtree sync
+1. 用固定 wrapper 執行 sync apply，不手打 ad hoc subtree / checkout / copy 指令
 2. 若 delivery mode 需要 projection/bootstrap，則自動接續執行
 3. 保留 sync 前後 ref 與變更摘要
 4. projection/bootstrap 由 core-managed artifact `.agent/runtime/scripts/workflow_core_projection.py` 交付，而不是 downstream 額外預裝 wrapper
-5. 同步失敗時回報明確失敗階段
+5. 支援獨立 downstream repo 的 staged-root lane，讓 managed paths 可直接從 staged/export tree materialize 回 root live path
+6. 同步失敗時回報明確失敗階段
 
 最低輸出：
 
@@ -188,6 +189,7 @@
 3. 跑最小 preflight
 4. 跑 shared portable smoke suite `.agent/runtime/scripts/portable_smoke/workflow_core_smoke.py`
 5. 檢查 `.agent/skills` split contract 未被回破壞
+6. 若指定 staged-root lane，直接比對 worktree 與 staged/export tree 的 managed paths 是否已對齊
 
 最低輸出：
 
@@ -281,6 +283,7 @@ python .agent/runtime/scripts/workflow_core_export_landing_checklist.py --profil
 3. 本地沒有未處理的 core managed path divergence
 4. `./core_ownership_manifest.yml` 存在且可被 wrapper commands 共同讀取
 5. projection/bootstrap 所需條件已存在
+6. 若 staging root 位於 repo 內，需接受 `.workflow-core/staging/**` 被分類為 manual-review warning，而不是誤判成 core divergence
 
 ### Sync apply
 
@@ -289,7 +292,8 @@ python .agent/runtime/scripts/workflow_core_export_landing_checklist.py --profil
 1. 一律走固定 wrapper command，不手打 ad hoc subtree 指令
 2. 若需要 projection/bootstrap，必須自動串接，不可依賴操作者記憶
 3. projection/bootstrap artifact 應隨 core 交付，不要求 downstream 先安裝外部 wrapper
-4. 發生衝突時，要能指出是 core divergence、delivery contract，還是 split contract 問題
+4. 若以獨立 downstream staged-root lane 同步，應由 wrapper 從 staged/export tree 讀入 managed paths，而不是要求操作者自行手動複製回 root
+5. 發生衝突時，要能指出是 core divergence、delivery contract，還是 split contract 問題
 
 ### Sync verify
 
@@ -300,6 +304,7 @@ python .agent/runtime/scripts/workflow_core_export_landing_checklist.py --profil
 3. 最小 preflight 可過
 4. shared portable smoke suite 可過
 5. `.agent/skills` split 後的 state/config/local install 沒被拉回 core managed tree
+6. 若 apply 走 staged-root lane，verify 也要能直接以 staged/export tree 作為對齊基準
 
 ### Sync record
 
@@ -350,6 +355,7 @@ python .agent/runtime/scripts/workflow_core_export_landing_checklist.py --profil
 1. downstream 有 overlay-only 變更，但不影響 core managed path
 2. release note 中有 manual migration step，需要操作者確認是否已完成
 3. temporary divergence 已存在，但有明確對應 upstream follow-up，且這次 sync 不碰該路徑
+4. `.workflow-core/staging/**` staged input 位於 downstream repo 內，`sync precheck` 因此回 `warn`；只要 warning 可被確認來自 staged export tree 本身，而不是 root live path 下的 core divergence，即可進入 apply
 
 manual review 的重點是讓腳本明確說出「為什麼停」，不是把判斷責任全部丟回人腦。
 
@@ -360,16 +366,33 @@ manual review 的重點是讓腳本明確說出「為什麼停」，不是把判
 這組 phase-1 wrapper family 已依下列優先序完成最小落地；後續若要擴充，仍建議沿用同一個優先順序：
 
 1. 先做 `workflow-core sync precheck`
-2. 再做 `workflow-core sync verify`
-3. 再做 `workflow-core sync apply`
+2. 再做 `workflow-core sync apply`
+3. 再做 `workflow-core sync verify`
 4. 然後補 `workflow-core release precheck`
 5. 最後再補 `release create` 與 `publish-notes`
 
-原因很簡單：先把 downstream 消費端的風險擋住，比先把 upstream 發版包裝漂亮更重要。
+原因很簡單：先把 downstream 消費端的風險擋住，再把 staged/export tree 真正 materialize 回 root live path，最後才驗證落地結果，會比先包裝 upstream 發版更重要。
 
 ---
 
-## 8. 最短結論
+## 8. 已驗證的 downstream staged sync lane
+
+截至 2026-03-20，下面這條最小 lane 已有獨立 downstream temp repo 的實際驗證：
+
+1. upstream current worktree snapshot 先 materialize `curated-core-v1` export tree
+2. export tree 放入 downstream repo 的 `.workflow-core/staging/<label>/`
+3. `workflow-core sync precheck` 回 `warn`
+4. warning 原因僅來自 `.workflow-core/staging/**` staged input
+5. `workflow-core sync apply --staging-root ...` 回 `pass`
+6. `workflow-core sync verify --staging-root ...` 回 `pass`
+7. portable smoke during verify 回 `pass`
+8. downstream 先前故意偏離的 managed workflow file 已成功恢復成 staged export 內容
+
+這代表目前 phase-1 已不只是在維護 command contract；`export -> stage -> apply -> verify` 這條 lane 已有實際可重跑的 downstream 落地模型。
+
+---
+
+## 9. 最短結論
 
 這份文件真正要固定的，不是某一條 shell 指令，而是兩件事：
 

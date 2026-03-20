@@ -34,6 +34,14 @@ def load_module(file_path: Path, module_name: str):
     return module
 
 
+def worktree_path_matches_staging_root(repo_root: Path, staging_root: Path, path: str) -> bool:
+    worktree_path = repo_root / path
+    source_path = staging_root / path
+    if not worktree_path.exists() or not source_path.exists():
+        return False
+    return worktree_path.read_bytes() == source_path.read_bytes()
+
+
 def run_sync_verify(
     repo_root: Path,
     manifest_path: Path,
@@ -41,6 +49,7 @@ def run_sync_verify(
     required_live_paths: list[str] | None = None,
     preflight_command: str | None = None,
     smoke_command: str | None = None,
+    staging_root: Path | None = None,
 ) -> dict:
     contract = evaluate_manifest_contract(repo_root, manifest_path, extra_required_live_paths=required_live_paths)
     failures: list[str] = []
@@ -52,21 +61,28 @@ def run_sync_verify(
     else:
         precheck = run_sync_precheck(repo_root=repo_root, release_ref=release_ref, manifest_path=manifest_path)
         if precheck["core_divergence_paths"]:
-            aligned_paths = [
-                path for path in precheck["core_divergence_paths"] if worktree_path_matches_ref(repo_root, release_ref, path)
-            ]
+            if staging_root is not None:
+                aligned_paths = [
+                    path for path in precheck["core_divergence_paths"] if worktree_path_matches_staging_root(repo_root, staging_root, path)
+                ]
+                context_label = "staged export tree"
+            else:
+                aligned_paths = [
+                    path for path in precheck["core_divergence_paths"] if worktree_path_matches_ref(repo_root, release_ref, path)
+                ]
+                context_label = "requested release ref"
             unexpected_paths = [path for path in precheck["core_divergence_paths"] if path not in aligned_paths]
             if unexpected_paths:
                 preflight_ok = False
                 preflight_output = "; ".join(
                     [
                         *precheck.get("notes", []),
-                        f"managed paths still differ from target release ref: {', '.join(unexpected_paths)}",
+                        f"managed paths still differ from target {context_label}: {', '.join(unexpected_paths)}",
                     ]
                 )
             else:
                 preflight_ok = True
-                preflight_output = "managed worktree changes already match the requested release ref"
+                preflight_output = f"managed worktree changes already match the target {context_label}"
                 preflight_context_notes.append(preflight_output)
         else:
             preflight_ok = precheck["status"] != "fail"
@@ -154,6 +170,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--require-live-path", action="append", default=[], help="額外要求存在的 live path")
     parser.add_argument("--preflight-command", default=None, help="自訂 preflight command")
     parser.add_argument("--smoke-command", default=None, help="自訂 smoke command")
+    parser.add_argument("--staging-root", type=Path, default=None, help="可選的 staged/export tree root，用於獨立 downstream repo verify")
     parser.add_argument("--json", action="store_true", help="輸出 JSON")
     return parser
 
@@ -171,6 +188,7 @@ def main(argv: list[str] | None = None) -> int:
             required_live_paths=list(args.require_live_path or []),
             preflight_command=args.preflight_command,
             smoke_command=args.smoke_command,
+            staging_root=args.staging_root.resolve() if args.staging_root else None,
         )
     except Exception as exc:
         if args.json:

@@ -192,9 +192,13 @@ def get_overlay_patterns(manifest: dict[str, Any]) -> list[str]:
 
 def get_state_patterns(manifest: dict[str, Any]) -> list[str]:
     patterns: list[str] = []
+    managed_patterns = get_managed_patterns(manifest)
     for item in manifest.get("split_required", []):
         if isinstance(item, dict):
-            patterns.extend(split_compound_targets(str(item.get("recommended_target", ""))))
+            for target in split_compound_targets(str(item.get("recommended_target", ""))):
+                if any(path_matches_pattern(target, managed_pattern) for managed_pattern in managed_patterns):
+                    continue
+                patterns.append(target)
 
     skill_ownership = manifest.get("skill_ownership", {})
     local_target = skill_ownership.get("local_install_target")

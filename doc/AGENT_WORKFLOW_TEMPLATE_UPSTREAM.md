@@ -1,84 +1,220 @@
-# Template Repo 回推建議（不含 portable）
+# Workflow-Core Upstream / Downstream Guide
 
-本文件目的：把本 repo（Ivyhousetw-META）已落地且穩定的 dev-team workflow / skills 強化，整理成可回推到 template repo（`foreverwow001/agent-workflow-template`）的「最小可行同步包」。
+本文件目的：把目前 template repo 已落地的 `workflow-core` export / projection / sync lane，整理成 upstream 維護者與 downstream 使用者都能直接照跑的最短操作說明。
 
-> ✅ 依使用者要求：**一鍵復原/自檢模組（portable）不回推**。
+這份文件處理的是「現在 repo 真正可執行的流程」，不是早期手動挑檔、`cp -r`、`rsync` 的過渡做法。
 
 ---
 
-## 1) 建議回推的內容（高優先）
+## 1. 目前已定型的實際模型
 
-### A. Skills 系統強化（建議整包同步）
-目標：讓 template repo 在「Plan 驗證、變更統計 Gate、skills manifest、skills 執行統計」上具備機械化能力。
+目前 repo 的 workflow-core 交付模型如下：
 
-建議同步：
-- `.agent/skills/plan-validator/`：Plan Gate（必跑）
-- `.agent/skills/git-stats-reporter/`：Maintainability/UI-UX Gate 判定依據
-- `.agent/skills/manifest-updater/` + `.agent/state/skills/skill_manifest.json`：skills 清單同步（canonical manifest）
-- `.agent/skills/skills-evaluator/`：從 Log 產生 skills 成功率/失敗統計
-- `.agent/skills/github-explorer/`：安全的外部技能搜尋/預覽/下載流程（external/local install target: `.agent/skills_local/**`）
-- `.agent/skills/skill-converter/`：下載後轉換流水線（overlay index target: `.agent/state/skills/INDEX.local.md`）
-- `.agent/config/skills/skill_whitelist.json`：白名單 canonical 檔
-- `.agent/skills/schemas/**`：skills JSON output schema（graceful degradation；保留 public path）
-- `.agent/skills/INDEX.md`：builtin core 技能索引文件（external/local additions 改寫 `.agent/state/skills/INDEX.local.md`）
+- machine-readable source of truth：`./core_ownership_manifest.yml`
+- active export profile：`curated-core-v1`
+- export analysis：`.agent/runtime/scripts/workflow_core_export_landing_checklist.py`
+- export materialization：`.agent/runtime/scripts/workflow_core_export_materialize.py`
+- projection / bootstrap artifact：`.agent/runtime/scripts/workflow_core_projection.py`
+- downstream sync wrappers：
+  - `.agent/runtime/scripts/workflow_core_sync_precheck.py`
+  - `.agent/runtime/scripts/workflow_core_sync_apply.py`
+  - `.agent/runtime/scripts/workflow_core_sync_verify.py`
+- shared portable verification：`.agent/runtime/scripts/portable_smoke/workflow_core_smoke.py`
 
-### B. Workflow 合約文件（建議同步）
-目標：template repo 的「Gate/證據鏈/Role Selection/Cross-QA」可直接沿用。
+重點是：
 
-建議同步：
-- `.agent/workflows/AGENT_ENTRY.md`：唯一入口與 READ_BACK_REPORT Gate
-- `.agent/workflows/dev-team.md`：Plan → Approve → Role Selection → Execute → QA → Log → Close 的主流程
-- `.agent/roles/*.md`：planner/engineer/qa/coordinator/domain_expert/security（如有專案特定 expert，應在 downstream repo 自行擴充，而不是保留舊專案角色）
+1. upstream 不再靠人工挑檔決定 export surface，而是以 manifest + export profile 決定。
+2. downstream 不再靠人工覆蓋 root live paths，而是以 `sync apply` + projection/bootstrap materialize。
+3. portable smoke 已是 core-managed runtime artifact，不是外部另裝的 optional 模組。
 
-### C. VS Code 系統檔（建議同步）
-目標：把「終端注入/監控」與 deterministic gates 的規範落地。
+---
 
-建議同步：
+## 2. 現在推薦的 upstream scope
+
+`curated-core-v1` 目前涵蓋的核心面向：
+
+### A. Workflow contract
+
+- `.agent/workflows/**`
+- `.agent/workflows/references/**`
+- `.agent/roles/coordinator.md`
+- `.agent/roles/planner.md`
+- `.agent/roles/engineer.md`
+- `.agent/roles/qa.md`
+- `.agent/roles/security.md`
+
+### B. Runtime / sync / projection toolchain
+
+- `.agent/runtime/**`
 - `.agent/VScode_system/**`
+- `.agent/templates/handoff_template.md`
+- `core_ownership_manifest.yml`
 
-### D. Template 初始化腳本（視 template 現況擇一同步）
-目標：讓 template repo 的一鍵初始化能建立完整 `.agent/` 結構與必備檔案。
+### C. Curated builtin skills
 
-建議同步：
+- `.agent/skills/__init__.py`
+- `.agent/skills/INDEX.md`
+- `.agent/skills/_shared/__init__.py`
+- `.agent/skills/schemas/**`
+- curated builtin package dirs listed in `core_ownership_manifest.yml`
+
+### D. Shared plan/log templates
+
+- `doc/plans/Idx-000_plan.template.md`
+- `doc/logs/Idx-000_log.template.md`
+
+---
+
+## 3. 明確不屬於 workflow-core export 的內容
+
+這些仍屬 overlay / maintainer / environment surface，不應進 `curated-core-v1`：
+
+- `project_rules.md`
+- `doc/implementation_plan_index.md`
+- active `doc/plans/Idx-*_plan.md`
+- active `doc/logs/Idx-*_log.md`
+- `maintainers/**`
+- `.agent/workflow_baseline_rules.md`
+- `.agent/PORTABLE_WORKFLOW.md`
+- `.agent/PR_PREPARATION.md`
 - `.agent/scripts/setup_workflow.sh`
 - `.agent/scripts/run_codex_template.sh`
-
-### E. VS Code 周邊（A+B：終端管理/編排 + sendText/監測）（建議同步）
-目標：讓新專案從 template 開箱就具備「PTY 主路徑 + 條件式 fallback」能力。
-
-建議同步：
-- `.agent/runtime/tools/vscode_terminal_pty/**`：local VS Code extension（workflow 唯一主路徑）
-- `.agent/runtime/tools/vscode_terminal_fallback/**`：條件式 legacy fallback adapter
-- 相關套件的安裝命令或 symlink 腳本
-- `.vscode/**`：workspace settings / tasks / extension recommendations（包含 Copilot terminal command debug 開關）
-
-> 補充：injector / monitor / orchestrator 已在 2026-03-13 cleanup 中自 template repo 移除；若要保留其設計脈絡，請改用 maintainer 文檔描述來源，不要再把它們當同步資產。
+- `.devcontainer/**`
+- `tests/**`
+- `.agent/state/**`
+- `.agent/config/**`
+- `.agent/skills_local/**`
 
 ---
 
-## 2) 不回推的內容（本次明確排除）
+## 4. Upstream Release / Export Flow
 
-- portable 自檢模組：目前 repo 未內建，且依使用者指示不回推
-- `.agent/logs/**`、`.agent/plans/**`：稽核/任務紀錄屬於 repo 私有，避免污染 template
-- `.agent/active_sessions.json`、`.agent/execution_log.jsonl`：runtime 狀態檔
+### Step 1. 確認 export profile 在來源 ref 可落地
+
+```bash
+/workspaces/agent-workflow-template/.venv/bin/python \
+  .agent/runtime/scripts/workflow_core_export_landing_checklist.py \
+  --repo-root . \
+  --source-ref HEAD
+```
+
+判讀原則：
+
+- `pass`：目前來源 ref 已可直接 materialize export tree
+- `warn`：仍有 `worktree-only` 或 `missing` include patterns
+- `fail`：manifest / export contract 自己不一致
+
+### Step 2. 先跑 release precheck
+
+```bash
+/workspaces/agent-workflow-template/.venv/bin/python \
+  .agent/runtime/scripts/workflow_core_release_precheck.py \
+  --repo-root .
+```
+
+### Step 3. materialize curated export tree
+
+```bash
+/workspaces/agent-workflow-template/.venv/bin/python \
+  .agent/runtime/scripts/workflow_core_export_materialize.py \
+  --repo-root . \
+  --source-ref HEAD \
+  --output /tmp/curated-core-v1
+```
+
+輸出目錄會包含：
+
+- curated workflow-core files
+- `workflow-core-export-curated-core-v1.json` metadata
 
 ---
 
-## 3) 同步方式（目前無內建一鍵腳本）
+## 5. Downstream Sync Flow
 
-目前 repo **沒有**內建 `sync_agent_workflow_to_template.py` 這類一鍵同步腳本。
+目前推薦的 downstream 操作方式，是把 upstream export tree 先放到 repo 內的 staging 位置，再用 wrapper commands 完成 apply / verify。
 
-建議操作流程：
-1. 在本機 clone `foreverwow001/agent-workflow-template` 到某個資料夾
-2. 依本文件列出的建議同步清單，手動挑選要回推的檔案或資料夾
-3. 用 `git diff`、`cp -r`、`rsync` 或編輯器比對工具同步變更
-4. 到 template repo 內跑 lint/tests（若有）並開 PR
+建議 staging 路徑：
+
+- `.workflow-core/staging/<release-ref-or-label>/`
+
+### Step 1. 將 export tree 放進 downstream staging root
+
+範例：
+
+```bash
+mkdir -p .workflow-core/staging/core-v20260320-1
+cp -R /tmp/curated-core-v1/. .workflow-core/staging/core-v20260320-1/
+```
+
+### Step 2. 先跑 sync precheck
+
+```bash
+/path/to/python .agent/runtime/scripts/workflow_core_sync_precheck.py \
+  --repo-root . \
+  --release-ref core-v20260320-1
+```
+
+若 staging root 位於 repo 內，`sync precheck` 會因 `.workflow-core/staging/**` 出現在 working tree 而回 `warn`。這是預期行為，不代表 core managed path 已經有 local divergence。
+
+### Step 3. 套用 staged export tree
+
+```bash
+/path/to/python .agent/runtime/scripts/workflow_core_sync_apply.py \
+  --repo-root . \
+  --release-ref core-v20260320-1 \
+  --staging-root .workflow-core/staging/core-v20260320-1
+```
+
+目前 `sync apply` 的行為：
+
+1. 先跑 manifest-backed `sync precheck`
+2. 若 warning 只來自 staging tree 本身，允許繼續
+3. 載入 staged export tree 的 managed paths
+4. 呼叫 `workflow_core_projection.py` materialize root live paths
+5. 若 `doc/implementation_plan_index.md` 缺失，bootstrap 最小 placeholder
+
+### Step 4. 套用後立刻 verify
+
+```bash
+/path/to/python .agent/runtime/scripts/workflow_core_sync_verify.py \
+  --repo-root . \
+  --release-ref core-v20260320-1 \
+  --staging-root .workflow-core/staging/core-v20260320-1
+```
+
+目前 `sync verify` 會檢查：
+
+1. required live path anchors
+2. `AGENT_ENTRY.md` 入口 contract
+3. post-apply managed changes是否已和 staged export tree 對齊
+4. portable smoke suite
+5. skills mutable split contract
 
 ---
 
-## 4) 驗收清單（template repo）
+## 6. 2026-03-20 實際驗證結果
 
-- ✅ `AGENT_ENTRY.md` 的 READ_BACK_REPORT Gate 可正常要求「必讀檔案逐檔閱讀」
-- ✅ `dev-team.md` 內的 Role Selection / Cross-QA / Skills Execution Gate 說明完整
-- ✅ `plan-validator/scripts/plan_validator.py` 能對 template 的 plan 檔案通過/失敗給出明確 JSON
-- ✅ `manifest-updater/scripts/manifest_updater.py --check` 在 template repo 可正常運作
+目前這套流程已用「current worktree snapshot -> curated export tree -> 獨立 downstream temp repo」實際驗證過一輪。
+
+驗證結果：
+
+- export landing checklist on current worktree snapshot: `pass`
+- export materialize from snapshot `HEAD`: `pass`
+- downstream `sync precheck`: `warn`
+  - 原因：repo 內 `.workflow-core/staging/**` 屬 staged input，需 manual review
+- downstream `sync apply --staging-root ...`: `pass`
+- downstream `sync verify --staging-root ...`: `pass`
+- mutated downstream managed file successfully restored to exported content
+- portable smoke during verify: `pass`
+
+換句話說，現在已經不是只有 contract / stub 存在，而是 `export -> stage -> apply -> verify` 這條最小 downstream lane 已能跑通。
+
+---
+
+## 7. 維護注意事項
+
+1. 只要 `curated-core-v1` includes 改了，就必須同步更新 `managed_paths`，避免 export landing checklist 再次出現 contract drift。
+2. `split_required.recommended_target` 若是 compound target，不能把仍屬 managed core 的 path 誤當成 state-only pattern。
+3. 若 staging root 放在 downstream repo 內，`sync precheck` 回 `warn` 是預期；真正的 blocking 條件仍是 core managed path divergence。
+4. `workflow_core_projection.py` 現在已能 materialize staged managed files，但 `doc/implementation_plan_index.md` 仍屬 overlay artifact，bootstrap 的 placeholder 只保證入口 contract，不代表 upstream 接管該檔 ownership。
+5. 若未來改成 fetched release ref / subtree remote lane，`sync apply` / `sync verify` 仍應保留 `--staging-root` 路徑，因為這是目前已驗證過的獨立 downstream fallback lane。

@@ -118,12 +118,17 @@ def patterns_overlap(left: str, right: str) -> bool:
 
 def collect_split_targets(manifest: dict[str, Any]) -> list[str]:
     targets: list[str] = []
+    managed_patterns = get_managed_patterns(manifest)
     for item in manifest.get("split_required", []):
         if not isinstance(item, dict):
             continue
         for part in str(item.get("recommended_target", "")).split("+"):
             normalized = normalize_path(part)
-            if normalized and normalized not in targets:
+            if not normalized:
+                continue
+            if any(path_matches_pattern(normalized, managed_pattern) for managed_pattern in managed_patterns):
+                continue
+            if normalized not in targets:
                 targets.append(normalized)
     return targets
 

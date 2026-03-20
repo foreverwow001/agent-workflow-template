@@ -33,6 +33,7 @@ def load_module(module_name: str, file_path: Path):
 
 
 def write_manifest(repo_root: Path) -> None:
+    repo_root.mkdir(parents=True, exist_ok=True)
     (repo_root / "core_ownership_manifest.yml").write_text(MANIFEST_FILE.read_text(encoding="utf-8"), encoding="utf-8")
 
 
@@ -75,6 +76,31 @@ class WorkflowCoreDeliveryContractTest(unittest.TestCase):
         self.assertEqual(result["status"], "warn")
         self.assertIn("doc/implementation_plan_index.md", result["created_paths"])
         self.assertEqual(result["missing_required_live_paths"], [])
+
+    def test_projection_materializes_managed_paths_from_staged_export_tree(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            repo_root = root / "downstream"
+            staging_root = root / "staging"
+            write_manifest(repo_root)
+            create_required_live_path_anchors(repo_root, include_index=True)
+
+            staged_file = staging_root / ".agent" / "workflows" / "dev-team.md"
+            staged_file.parent.mkdir(parents=True, exist_ok=True)
+            staged_file.write_text("projected workflow\n", encoding="utf-8")
+
+            result = self.projection.run_projection_stub(
+                repo_root=repo_root,
+                manifest_path=repo_root / "core_ownership_manifest.yml",
+                source_root=staging_root,
+                bootstrap_overlay_index_file=True,
+            )
+
+            projected_text = (repo_root / ".agent" / "workflows" / "dev-team.md").read_text(encoding="utf-8")
+
+        self.assertEqual(result["status"], "pass")
+        self.assertIn(".agent/workflows/dev-team.md", result["projected_paths"])
+        self.assertEqual(projected_text, "projected workflow\n")
 
     def test_portable_smoke_passes_when_required_anchors_exist(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
