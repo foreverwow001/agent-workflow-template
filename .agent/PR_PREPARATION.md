@@ -7,6 +7,7 @@
 ```
 agent-workflow-template/
 ├── .agent/
+│   ├── workflow_baseline_rules.md (template repo self-maintenance only)
 │   ├── workflows/
 │   │   ├── AGENT_ENTRY.md
 │   │   └── dev-team.md
@@ -16,19 +17,28 @@ agent-workflow-template/
 │   │   ├── qa.md
 │   │   └── domain_expert.md (template)
 │   ├── skills/
-│   │   ├── code_reviewer.py
-│   │   ├── doc_generator.py
-│   │   ├── test_runner.py
-│   │   ├── explore_cli_tool.md
-│   │   └── skill_whitelist.json (empty template)
+│   │   ├── code-reviewer/
+│   │   ├── doc-generator/
+│   │   ├── test-runner/
+│   │   ├── plan-validator/
+│   │   ├── git-stats-reporter/
+│   │   ├── skills-evaluator/
+│   │   ├── github-explorer/
+│   │   ├── skill-converter/
+│   │   ├── manifest-updater/
+│   │   ├── _shared/
+│   │   ├── explore-cli-tool/
+│   │   │   └── SKILL.md
+│   │   └── schemas/
 │   ├── scripts/
 │   │   ├── run_codex_template.sh ⭐
 │   │   └── setup_workflow.sh
+│   ├── runtime/
+│   │   ├── scripts/
+│   │   └── tools/
 │   ├── state/ (runtime state; tokens/log)
 │   └── templates/
 │       └── handoff_template.md
-├── tools/
-│   └── (reserved)
 ├── doc/
 │   ├── plans/
 │   │   └── Idx-000_plan.template.md
@@ -37,16 +47,18 @@ agent-workflow-template/
 │   └── implementation_plan_index.md (template)
 ├── .devcontainer/
 │   └── devcontainer.json (optional, 範例)
-├── project_rules.md (template)
+├── project_rules.md (downstream starter template)
 ├── README.md
 └── LICENSE
 ```
 
+> 釋出時需明確說明：template repo 維護使用 `.agent/workflow_baseline_rules.md`，下游專案落地後改用根目錄 `project_rules.md`。
+
 ### 2. 新增的核心功能 ⭐
 
 #### VS Code 內建終端協作（Coordinator）
-- **目的**：以 GitHub Copilot Chat 作為 Coordinator，透過 VS Code 內建 `terminal.sendText` 注入指令，並以 Proposed API 監控終端輸出。
-- **限制**：不使用任何外部 Bridge/Server，不以 bash 腳本「代送」指令到 Codex/OpenCode（避免 TUI/程序中斷）。
+- **目的**：以 GitHub Copilot Chat 作為 Coordinator，透過 `.agent/runtime/tools/vscode_terminal_pty` command surface 管理 prompt / submit / monitor。
+- **限制**：不把 legacy sendText / bash 腳本 / TTY 寫入當成 workflow 主路徑；fallback bridge 只屬條件式備援。
 
 #### 自動化執行腳本
 - `run_codex_template.sh`：批次執行 Codex CLI（JSONL 審計）
@@ -69,16 +81,16 @@ agent-workflow-template/
 
 ## 快速開始
 
-### 方式 1：使用 GitHub Template（推薦）
+### 方式 1：用 core/overlay bootstrap downstream repo（推薦）
 
-1. 點擊 "Use this template"
-2. Clone 新專案
+1. 建立或準備下游 repo
+2. 依 `.agent/PORTABLE_WORKFLOW.md` 導入 curated workflow core
 3. 執行初始化：
    ```bash
    ./.agent/scripts/setup_workflow.sh .
    ```
 
-### 方式 2：手動複製
+### 方式 2：手動複製 bootstrap surface
 
 ```bash
 git clone https://github.com/YOUR_ORG/agent-workflow-template.git
@@ -109,8 +121,8 @@ cd agent-workflow-template
 
 ## 文件
 
-- [Dev Team Workflow](.agent/workflows/dev-team.md)
-- [Agent Entry](.agent/workflows/AGENT_ENTRY.md)
+- [Dev Team Workflow](./workflows/dev-team.md)
+- [Agent Entry](./workflows/AGENT_ENTRY.md)
 
 ## 需求
 
@@ -145,17 +157,18 @@ cd agent-workflow-template
 3. 建立 Git tag
 ```
 
-### 4. GitHub Template 設定
+### 4. Repository 發佈設定
 
 在 GitHub repo settings：
 
-1. ✅ Template repository
-2. 添加 Topics:
+1. 添加 Topics:
    - `agent-workflow`
    - `github-copilot`
    - `codex-cli`
    - `vscode-extension`
    - `dev-container`
+
+> 不再建議把這個 repo 當成 downstream 的 GitHub template 入口；正式推薦方式是 curated core + overlay bootstrap，後續再接 `workflow-core` sync lane。
 
 ### 5. 授權
 
@@ -177,15 +190,16 @@ cd agent-workflow-template
 ### Phase 2：GitHub 發佈
 
 1. [ ] Push 到 GitHub
-2. [ ] 設定為 Template repository
-3. [ ] 添加 Topics
-4. [ ] 建立 Release（v1.0.0）
-5. [ ] 撰寫 Release Notes
+2. [ ] 添加 Topics
+3. [ ] 建立 Release（v1.0.0）
+4. [ ] 撰寫 Release Notes
+5. [ ] 明確標示 downstream 官方路徑為 core/overlay bootstrap + sync
 
 ### Phase 3：測試驗證
 
-1. [ ] 使用 Template 建立測試專案
+1. [ ] 用 portable/bootstrap flow 建立測試 downstream repo
 2. [ ] 執行完整流程（Plan → Execute → QA）
+3. [ ] 驗證後續 `workflow-core sync` 更新路徑
 4. [ ] 收集反饋改進
 
 ---
