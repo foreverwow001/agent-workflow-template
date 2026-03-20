@@ -124,10 +124,17 @@ downstream 在 pull subtree 前，先看本地變更屬於哪一類：
 
 實際同步方式，以你最後採用的 delivery mode 為準：
 
-- 若 core 直接 materialize 在 root live path：更新 subtree 後直接覆蓋對應 managed paths
-- 若 core 先同步到 staging/export 區：更新 subtree 後必須再跑 projection/bootstrap，把內容投影回 root live path
+- 若 core 直接 materialize 在 root live path：更新 transport source 後直接覆蓋對應 managed paths
+- 若 core 先同步到 staging/export 區：先用固定 wrapper 把 upstream release ref stage 到 `.workflow-core/staging/<release-ref>/`，再跑 projection/bootstrap，把內容投影回 root live path
 
-這一步的重點不是 raw `git subtree` 指令長相，而是一定要固定成同一條團隊可重複執行的 sync command wrapper。不要讓每個 downstream 專案各自手打不同 subtree 指令。
+目前推薦的 phase-2 transport 是：
+
+1. `workflow-core sync stage` 從 upstream remote/ref materialize curated export tree 到 staging root
+2. `workflow-core sync precheck`
+3. `workflow-core sync apply --staging-root ...`
+4. `workflow-core sync verify --staging-root ...`
+
+這一步的重點不是 raw `git subtree` 指令長相，而是一定要固定成同一條團隊可重複執行的 sync command wrapper。不要讓每個 downstream 專案各自手打不同 subtree 指令，也不要回到手動 `cp -r` / `rsync` 當主要 lane。
 
 ### A-7. 同步後立刻跑最小驗證
 

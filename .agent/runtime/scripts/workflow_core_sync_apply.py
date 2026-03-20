@@ -48,12 +48,15 @@ def normalize_staging_root(repo_root: Path, staging_root: Path | None) -> tuple[
 def precheck_allows_staging_tree_only_warning(precheck: dict, staging_root_rel: str | None) -> bool:
     if not staging_root_rel or precheck.get("status") != "warn":
         return False
-    if precheck.get("core_divergence_paths") or precheck.get("overlay_only_paths") or precheck.get("state_only_paths"):
+    if precheck.get("core_divergence_paths") or precheck.get("state_only_paths"):
         return False
-    unclassified_paths = precheck.get("unclassified_paths", [])
-    if not unclassified_paths:
+    review_paths = [
+        *precheck.get("overlay_only_paths", []),
+        *precheck.get("unclassified_paths", []),
+    ]
+    if not review_paths:
         return False
-    return all(path == staging_root_rel or path.startswith(staging_root_rel + "/") for path in unclassified_paths)
+    return all(path == staging_root_rel or path.startswith(staging_root_rel + "/") for path in review_paths)
 
 
 def select_sync_mode(explicit_mode: str | None, projection_artifact_path: str) -> str:

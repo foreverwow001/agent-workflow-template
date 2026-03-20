@@ -310,7 +310,60 @@
 
 - `0`, `10`, `20`, `30`, `2`
 
-### 3.5 `workflow-core sync apply`
+### 3.5 `workflow-core sync stage`
+
+#### Required arguments
+
+- `--release-ref REF`
+
+#### Optional arguments
+
+- `--repo-root PATH`
+- `--source-ref REF`
+- `--source-remote NAME`
+  - optional
+  - 指定 upstream remote 名稱；wrapper 會先 fetch 指定 ref，再從 fetched ref materialize curated export tree
+- `--profile NAME`
+- `--staging-root PATH`
+- `--manifest PATH`
+- `--json`
+
+#### Behavior
+
+- 將指定 release ref 的 curated workflow-core export tree materialize 到 downstream staging root
+- 若指定 `--source-remote`，必須先 fetch 指定 ref，再從 fetched ref 讀取 manifest 與 export surface
+- 預設 staging root 應為 `.workflow-core/staging/<release-ref>/`
+- 輸出必須包含 staged metadata，讓後續 apply / verify 可追蹤 staging source
+- 此 command 的責任是固定 remote/export-tree transport wrapper，不要求操作者手動 `cp -r` 或自行拼湊 subtree 指令
+
+#### stdout JSON contract
+
+```json
+{
+  "status": "pass|fail|error",
+  "repo_root": "/abs/path",
+  "release_ref": "<ref>",
+  "source_ref": "<ref>",
+  "resolved_source_ref": "<sha>",
+  "source_remote": "origin",
+  "profile_name": "curated-core-v1",
+  "staging_root": "/abs/path/.workflow-core/staging/<ref>",
+  "metadata_path": "/abs/path/.workflow-core/staging/<ref>/workflow-core-stage-metadata.json",
+  "selected_path_count": 0,
+  "selected_paths": [],
+  "notes": []
+}
+```
+
+#### stderr contract
+
+- `usage` 或 `runtime error` 時輸出錯誤說明
+
+#### Exit code
+
+- `0`, `20`, `30`, `2`
+
+### 3.6 `workflow-core sync apply`
 
 #### Required arguments
 
@@ -362,7 +415,7 @@
 
 - `0`, `20`, `30`, `2`
 
-### 3.6 `workflow-core sync verify`
+### 3.7 `workflow-core sync verify`
 
 #### Required arguments
 

@@ -131,20 +131,28 @@
 
 ## 5. Downstream Sync Flow
 
-目前推薦的 downstream 操作方式，是把 upstream export tree 先放到 repo 內的 staging 位置，再用 wrapper commands 完成 apply / verify。
+目前推薦的 downstream 操作方式，是先用固定 wrapper 把 upstream release ref materialize 到 repo 內的 staging 位置，再用 wrapper commands 完成 precheck / apply / verify。
 
 建議 staging 路徑：
 
 - `.workflow-core/staging/<release-ref-or-label>/`
 
-### Step 1. 將 export tree 放進 downstream staging root
+### Step 1. 將 upstream release materialize 到 downstream staging root
 
-範例：
+建議直接使用新的 remote staging wrapper：
 
 ```bash
-mkdir -p .workflow-core/staging/core-v20260320-1
-cp -R /tmp/curated-core-v1/. .workflow-core/staging/core-v20260320-1/
+/path/to/python .agent/runtime/scripts/workflow_core_sync_stage.py \
+  --repo-root . \
+  --release-ref core-v20260320-1 \
+  --source-remote workflow-core-upstream
 ```
+
+預設輸出位置：
+
+- `.workflow-core/staging/<release-ref>/`
+
+若你已在其他地方先 materialize export tree，也仍可保留手動 copy 作為 fallback，但日常 lane 應優先走 `workflow_core_sync_stage.py`，避免每次同步都手動搬檔。
 
 ### Step 2. 先跑 sync precheck
 
@@ -200,6 +208,7 @@ cp -R /tmp/curated-core-v1/. .workflow-core/staging/core-v20260320-1/
 
 - export landing checklist on current worktree snapshot: `pass`
 - export materialize from snapshot `HEAD`: `pass`
+- remote `workflow_core_sync_stage.py --source-remote ...`: `pass`
 - downstream `sync precheck`: `warn`
   - 原因：repo 內 `.workflow-core/staging/**` 屬 staged input，需 manual review
 - downstream `sync apply --staging-root ...`: `pass`
@@ -207,7 +216,7 @@ cp -R /tmp/curated-core-v1/. .workflow-core/staging/core-v20260320-1/
 - mutated downstream managed file successfully restored to exported content
 - portable smoke during verify: `pass`
 
-換句話說，現在已經不是只有 contract / stub 存在，而是 `export -> stage -> apply -> verify` 這條最小 downstream lane 已能跑通。
+換句話說，現在已經不是只有 contract / stub 存在，而是 `remote stage -> precheck -> apply -> verify` 這條最小 downstream lane 已能跑通。
 
 ---
 
@@ -216,5 +225,6 @@ cp -R /tmp/curated-core-v1/. .workflow-core/staging/core-v20260320-1/
 1. 只要 `curated-core-v1` includes 改了，就必須同步更新 `managed_paths`，避免 export landing checklist 再次出現 contract drift。
 2. `split_required.recommended_target` 若是 compound target，不能把仍屬 managed core 的 path 誤當成 state-only pattern。
 3. 若 staging root 放在 downstream repo 內，`sync precheck` 回 `warn` 是預期；真正的 blocking 條件仍是 core managed path divergence。
-4. `workflow_core_projection.py` 現在已能 materialize staged managed files，但 `doc/implementation_plan_index.md` 仍屬 overlay artifact，bootstrap 的 placeholder 只保證入口 contract，不代表 upstream 接管該檔 ownership。
-5. 若未來改成 fetched release ref / subtree remote lane，`sync apply` / `sync verify` 仍應保留 `--staging-root` 路徑，因為這是目前已驗證過的獨立 downstream fallback lane。
+4. `workflow_core_sync_stage.py` 目前實作的是 remote fetch + export-tree staging lane；它把 transport 收斂成固定 wrapper，但仍不要求 downstream 直接手打 raw subtree 指令。
+5. `workflow_core_projection.py` 現在已能 materialize staged managed files，但 `doc/implementation_plan_index.md` 仍屬 overlay artifact，bootstrap 的 placeholder 只保證入口 contract，不代表 upstream 接管該檔 ownership。
+6. 即使未來再往更完整的 remote transport 擴充，`sync apply` / `sync verify` 仍應保留 `--staging-root` 路徑，因為這是目前已驗證過的獨立 downstream lane。

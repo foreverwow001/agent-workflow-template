@@ -124,18 +124,22 @@ def parse_yaml_sequence(tokens: list[tuple[int, str]], index: int, indent: int) 
     return sequence, index
 
 
+def load_manifest_text(text: str, source_label: str = "<memory>") -> dict[str, Any]:
+    tokens = tokenize_yaml(text)
+    if not tokens:
+        raise ValueError(f"manifest is empty: {source_label}")
+    parsed, index = parse_yaml_block(tokens, 0, tokens[0][0])
+    if index != len(tokens):
+        raise ValueError(f"manifest parse did not consume all tokens: {source_label}")
+    if not isinstance(parsed, dict):
+        raise ValueError(f"manifest root must be a mapping: {source_label}")
+    return parsed
+
+
 def load_manifest(manifest_path: Path) -> dict[str, Any]:
     if not manifest_path.exists():
         raise FileNotFoundError(f"manifest not found: {manifest_path}")
-    tokens = tokenize_yaml(manifest_path.read_text(encoding="utf-8"))
-    if not tokens:
-        raise ValueError(f"manifest is empty: {manifest_path}")
-    parsed, index = parse_yaml_block(tokens, 0, tokens[0][0])
-    if index != len(tokens):
-        raise ValueError(f"manifest parse did not consume all tokens: {manifest_path}")
-    if not isinstance(parsed, dict):
-        raise ValueError(f"manifest root must be a mapping: {manifest_path}")
-    return parsed
+    return load_manifest_text(manifest_path.read_text(encoding="utf-8"), source_label=str(manifest_path))
 
 
 def unique_paths(values: list[str]) -> list[str]:

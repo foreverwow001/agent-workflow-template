@@ -1,0 +1,45 @@
+{
+  "validation_type": "isolated-remote-stage-downstream-sync-e2e",
+  "release_ref": "core-v20260320-2",
+  "source_ref": "core-v20260320-2-e2e-source",
+  "resolved_source_ref": "6e9d83f632b5029d11b3de9c4b4d15772d0f152a",
+  "source_remote_name": "workflow-core-upstream",
+  "profile_name": "curated-core-v1",
+  "selected_path_count": 101,
+  "stage_status": "pass",
+  "stage_notes": [
+    "materialized workflow-core export tree into staging root",
+    "fetched source ref from remote before staging export tree"
+  ],
+  "precheck_status": "warn",
+  "precheck_manual_review_required": true,
+  "precheck_manual_review_reasons": [
+    "overlay-dirty"
+  ],
+  "precheck_warning_scope": "staging-root-only",
+  "precheck_core_divergence_count": 0,
+  "precheck_state_only_count": 0,
+  "precheck_unclassified_count": 0,
+  "apply_status": "pass",
+  "apply_sync_mode": "staging-plus-projection",
+  "apply_projection_ran": true,
+  "apply_notes": [
+    "loaded managed paths from staged export tree",
+    "sync precheck warning was limited to the staged export tree and was ignored for apply",
+    "projection/bootstrap materialized managed live paths and validated required anchors"
+  ],
+  "verify_status": "pass",
+  "verify_live_paths_ok": true,
+  "verify_agent_entry_contract_ok": true,
+  "verify_preflight_ok": true,
+  "verify_portable_smoke_ok": true,
+  "verify_skills_split_ok": true,
+  "managed_file_probe": ".agent/workflows/dev-team.md",
+  "managed_file_before_apply": "older downstream content",
+  "managed_file_after_apply": "upstream managed content",
+  "contract_implications": [
+    "workflow-core sync stage provides an executable remote transport wrapper for curated export-tree staging",
+    "staging-root-only overlay warnings from sync precheck are compatible with sync apply continuation",
+    "sync apply plus sync verify restore managed live paths to the staged export tree from the remote source ref"
+  ]
+}

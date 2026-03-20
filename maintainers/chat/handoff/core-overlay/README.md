@@ -10,6 +10,8 @@
   - 將 SOP 進一步收斂成 phase-1 `workflow-core` sync command / release checklist 與 hard-gate 契約
 - `cli-spec.md`
   - `workflow-core` 六個 wrapper commands 的 CLI 介面規格，固定參數、exit code 與 stdout/stderr 契約
+- `remote-stage-e2e-core-v20260320-2.md`
+  - `workflow-core sync stage -> precheck -> apply -> verify` 在隔離 upstream/downstream temp repos 上的完整 remote-stage 驗證紀錄
 - `curated-core-v1-landing-checklist.md`
   - 目前 `curated-core-v1` 相對於來源 ref 的 ready / worktree-only / missing 狀態快照
 - `curated-core-v1-release-candidate-batch.md`

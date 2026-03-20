@@ -51,6 +51,7 @@ def write_runtime_scripts(repo_root: Path) -> None:
         "workflow_core_release_precheck.py",
         "workflow_core_release_create.py",
         "workflow_core_release_publish_notes.py",
+        "workflow_core_sync_stage.py",
         "workflow_core_sync_precheck.py",
         "workflow_core_sync_apply.py",
         "workflow_core_sync_verify.py",
@@ -101,6 +102,7 @@ class WorkflowCoreWrapperCommandsTest(unittest.TestCase):
         cls.release_precheck = load_module("test_workflow_core_release_precheck", SCRIPTS_DIR / "workflow_core_release_precheck.py")
         cls.release_create = load_module("test_workflow_core_release_create", SCRIPTS_DIR / "workflow_core_release_create.py")
         cls.release_publish = load_module("test_workflow_core_release_publish_notes", SCRIPTS_DIR / "workflow_core_release_publish_notes.py")
+        cls.sync_stage = load_module("test_workflow_core_sync_stage", SCRIPTS_DIR / "workflow_core_sync_stage.py")
         cls.sync_apply = load_module("test_workflow_core_sync_apply", SCRIPTS_DIR / "workflow_core_sync_apply.py")
         cls.sync_verify = load_module("test_workflow_core_sync_verify", SCRIPTS_DIR / "workflow_core_sync_verify.py")
 
@@ -314,6 +316,76 @@ class WorkflowCoreWrapperCommandsTest(unittest.TestCase):
         self.assertIn(".agent/workflows/example.md", result["changed_managed_paths"])
         self.assertEqual(verify_result["status"], "pass")
         self.assertEqual(restored, "from staged export\n")
+
+    def test_sync_apply_allows_staging_tree_only_overlay_warning(self) -> None:
+        precheck = {
+            "status": "warn",
+            "core_divergence_paths": [],
+            "overlay_only_paths": [
+                ".workflow-core/staging/core-v20260320-2/.agent/workflows/dev-team.md",
+                ".workflow-core/staging/core-v20260320-2/workflow-core-stage-metadata.json",
+            ],
+            "state_only_paths": [],
+            "unclassified_paths": [],
+        }
+
+        allowed = self.sync_apply.precheck_allows_staging_tree_only_warning(
+            precheck,
+            ".workflow-core/staging/core-v20260320-2",
+        )
+
+        self.assertTrue(allowed)
+
+    def test_sync_stage_fetches_remote_release_into_staging_root(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            upstream_root = root / "upstream"
+            downstream_root = root / "downstream"
+
+            init_git_repo(upstream_root)
+            write_manifest(upstream_root)
+            write_runtime_scripts(upstream_root)
+            create_required_live_paths(upstream_root, include_index=True)
+            (upstream_root / ".agent" / "workflows" / "example.md").write_text("remote staged workflow\n", encoding="utf-8")
+            baseline_commit = commit_all(upstream_root, "seed upstream release")
+            subprocess.run(["git", "-C", str(upstream_root), "tag", "core-v20260320-remote", baseline_commit], check=True)
+
+            init_git_repo(downstream_root)
+            write_manifest(downstream_root)
+            write_runtime_scripts(downstream_root)
+            create_required_live_paths(downstream_root, include_index=False)
+            commit_all(downstream_root, "seed downstream baseline")
+            subprocess.run(["git", "-C", str(downstream_root), "remote", "add", "workflow-core-upstream", str(upstream_root)], check=True)
+
+            stage_result = self.sync_stage.run_sync_stage(
+                repo_root=downstream_root,
+                release_ref="core-v20260320-remote",
+                source_remote="workflow-core-upstream",
+            )
+            staging_root = Path(stage_result["staging_root"])
+            apply_result = self.sync_apply.run_sync_apply(
+                repo_root=downstream_root,
+                manifest_path=downstream_root / "core_ownership_manifest.yml",
+                release_ref="core-v20260320-remote",
+                staging_root=staging_root,
+            )
+            verify_result = self.sync_verify.run_sync_verify(
+                repo_root=downstream_root,
+                manifest_path=downstream_root / "core_ownership_manifest.yml",
+                release_ref="core-v20260320-remote",
+                staging_root=staging_root,
+            )
+
+            staged_metadata = json.loads((staging_root / "workflow-core-stage-metadata.json").read_text(encoding="utf-8"))
+            restored = (downstream_root / ".agent" / "workflows" / "example.md").read_text(encoding="utf-8")
+
+        self.assertEqual(stage_result["status"], "pass")
+        self.assertEqual(stage_result["source_remote"], "workflow-core-upstream")
+        self.assertTrue(stage_result["selected_path_count"] > 0)
+        self.assertEqual(staged_metadata["release_ref"], "core-v20260320-remote")
+        self.assertEqual(apply_result["status"], "pass")
+        self.assertEqual(verify_result["status"], "pass")
+        self.assertEqual(restored, "remote staged workflow\n")
 
     def test_sync_verify_passes_with_manifest_backed_checks(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

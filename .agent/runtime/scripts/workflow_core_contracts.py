@@ -7,6 +7,7 @@ import json
 import shlex
 import shutil
 import subprocess
+import re
 from pathlib import Path
 from typing import Any
 
@@ -56,9 +57,41 @@ def resolve_ref(repo_root: Path, ref: str | None) -> str | None:
     return proc.stdout.strip() or None
 
 
+def safe_ref_label(value: str) -> str:
+    normalized = normalize_path(value)
+    safe = re.sub(r"[^A-Za-z0-9._-]+", "-", normalized)
+    return safe.strip(".-") or "ref"
+
+
+def fetch_ref(repo_root: Path, remote: str, ref: str, local_ref: str) -> str:
+    git_run(repo_root, ["fetch", "--no-tags", remote, f"{ref}:{local_ref}"])
+    resolved = resolve_ref(repo_root, local_ref)
+    if resolved is None:
+        raise RuntimeError(f"failed to resolve fetched ref: {local_ref}")
+    return resolved
+
+
 def list_files_at_ref(repo_root: Path, ref: str) -> list[str]:
     proc = git_run(repo_root, ["ls-tree", "-r", "--name-only", ref])
     return [normalize_path(line) for line in proc.stdout.splitlines() if line.strip()]
+
+
+def read_bytes_at_ref(repo_root: Path, ref: str, path: str) -> bytes:
+    proc = subprocess.run(
+        ["git", "-C", str(repo_root), "show", f"{ref}:{normalize_path(path)}"],
+        check=False,
+        capture_output=True,
+    )
+    if proc.returncode != 0:
+        message = proc.stderr.decode("utf-8", errors="replace").strip() or proc.stdout.decode(
+            "utf-8", errors="replace"
+        ).strip()
+        raise RuntimeError(message or f"unable to read {path} at {ref}")
+    return proc.stdout
+
+
+def read_text_at_ref(repo_root: Path, ref: str, path: str, encoding: str = "utf-8") -> str:
+    return read_bytes_at_ref(repo_root, ref, path).decode(encoding)
 
 
 def checkout_paths_from_ref(repo_root: Path, ref: str, paths: list[str]) -> None:

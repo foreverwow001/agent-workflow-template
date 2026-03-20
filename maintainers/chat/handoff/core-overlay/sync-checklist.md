@@ -178,6 +178,36 @@
 }
 ```
 
+#### `workflow-core sync stage`
+
+用途：把 upstream release ref 的 curated export tree stage 到 downstream repo 內，作為後續 apply / verify 的固定輸入。
+
+最低責任：
+
+1. 用固定 wrapper 執行 remote/export-tree staging，不手打 ad hoc `cp -r`、`rsync`、或零散 git plumbing
+2. 若指定 upstream remote，先 fetch 指定 ref，再從 fetched ref 讀 manifest 與 export profile
+3. 預設輸出到 `.workflow-core/staging/<release-ref>/`
+4. 產出 stage metadata，讓後續 apply / verify 能追蹤 source remote/ref 與 selected paths
+5. 失敗時明確指出是 fetch、manifest、還是 export selection 問題
+
+最低輸出：
+
+```json
+{
+  "status": "pass|fail",
+  "release_ref": "<target ref>",
+  "source_ref": "<source ref>",
+  "resolved_source_ref": "<sha>",
+  "source_remote": "origin",
+  "profile_name": "curated-core-v1",
+  "staging_root": "/abs/path/.workflow-core/staging/<release-ref>",
+  "metadata_path": "/abs/path/.workflow-core/staging/<release-ref>/workflow-core-stage-metadata.json",
+  "selected_path_count": 0,
+  "selected_paths": [],
+  "notes": []
+}
+```
+
 #### `workflow-core sync verify`
 
 用途：在 downstream 套用後立刻做最小驗證。
@@ -274,6 +304,16 @@ python .agent/runtime/scripts/workflow_core_export_landing_checklist.py --profil
 
 ## 4. downstream 同步 checklist
 
+### Sync stage
+
+同步前若 upstream release 需要先進 staging root，至少確認：
+
+1. 目標 release ref 已明確
+2. 若走 remote lane，upstream remote 名稱與可 fetch ref 已確認
+3. staging root 預設落在 `.workflow-core/staging/<release-ref>/`
+4. stage wrapper 會輸出 metadata，而不是只留下不帶來源資訊的檔案副本
+5. 後續 apply / verify 要直接消費同一個 staging root，不另外手動改路徑
+
 ### Sync precheck
 
 同步前至少確認：
@@ -365,13 +405,14 @@ manual review 的重點是讓腳本明確說出「為什麼停」，不是把判
 
 這組 phase-1 wrapper family 已依下列優先序完成最小落地；後續若要擴充，仍建議沿用同一個優先順序：
 
-1. 先做 `workflow-core sync precheck`
-2. 再做 `workflow-core sync apply`
-3. 再做 `workflow-core sync verify`
-4. 然後補 `workflow-core release precheck`
-5. 最後再補 `release create` 與 `publish-notes`
+1. 先做 `workflow-core sync stage`
+2. 再做 `workflow-core sync precheck`
+3. 再做 `workflow-core sync apply`
+4. 再做 `workflow-core sync verify`
+5. 然後補 `workflow-core release precheck`
+6. 最後再補 `release create` 與 `publish-notes`
 
-原因很簡單：先把 downstream 消費端的風險擋住，再把 staged/export tree 真正 materialize 回 root live path，最後才驗證落地結果，會比先包裝 upstream 發版更重要。
+原因很簡單：先把 remote/export-tree transport 收斂成固定 wrapper，再把 downstream 消費端的風險擋住，接著才 materialize 回 root live path，最後驗證落地結果，會比先包裝 upstream 發版更重要。
 
 ---
 
@@ -379,14 +420,13 @@ manual review 的重點是讓腳本明確說出「為什麼停」，不是把判
 
 截至 2026-03-20，下面這條最小 lane 已有獨立 downstream temp repo 的實際驗證：
 
-1. upstream current worktree snapshot 先 materialize `curated-core-v1` export tree
-2. export tree 放入 downstream repo 的 `.workflow-core/staging/<label>/`
-3. `workflow-core sync precheck` 回 `warn`
-4. warning 原因僅來自 `.workflow-core/staging/**` staged input
-5. `workflow-core sync apply --staging-root ...` 回 `pass`
-6. `workflow-core sync verify --staging-root ...` 回 `pass`
-7. portable smoke during verify 回 `pass`
-8. downstream 先前故意偏離的 managed workflow file 已成功恢復成 staged export 內容
+1. upstream release ref 先經 `workflow-core sync stage` materialize 到 downstream `.workflow-core/staging/<label>/`
+2. `workflow-core sync precheck` 回 `warn`
+3. warning 原因僅來自 `.workflow-core/staging/**` staged input
+4. `workflow-core sync apply --staging-root ...` 回 `pass`
+5. `workflow-core sync verify --staging-root ...` 回 `pass`
+6. portable smoke during verify 回 `pass`
+7. downstream 先前故意偏離的 managed workflow file 已成功恢復成 staged export 內容
 
 這代表目前 phase-1 已不只是在維護 command contract；`export -> stage -> apply -> verify` 這條 lane 已有實際可重跑的 downstream 落地模型。
 

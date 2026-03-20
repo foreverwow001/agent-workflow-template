@@ -157,6 +157,7 @@ verification_strategy:
 automation_contract:
   canonical_manifest_path: "./core_ownership_manifest.yml"
   commands_must_read_manifest:
+    - "workflow-core sync stage"
     - "workflow-core sync precheck"
     - "workflow-core sync apply"
     - "workflow-core sync verify"
@@ -164,6 +165,7 @@ automation_contract:
   forbidden_fallback: "do not maintain separate hardcoded managed/overlay/state prefix lists per command once the manifest exists"
   notes:
     - "machine-readable ownership truth must live in one file so release and sync tooling cannot drift"
+    - "remote staging wrappers should read the source ref manifest before materializing the export tree, rather than reusing stale local prefix assumptions"
 
 managed_paths:
   - path: "core_ownership_manifest.yml"
