@@ -69,6 +69,9 @@
 - `project_maintainers/chat/README.md`
 - `project_maintainers/chat/handoff/SESSION-HANDOFF.template.md`
 - `project_maintainers/chat/archive/README.md`
+- `project_maintainers/improvement_candidates/README.md`
+- `project_maintainers/improvement_candidates/IMPROVEMENT-CANDIDATE.template.md`
+- `project_maintainers/improvement_candidates/PROMOTION-GUIDE.md`
 
 ---
 
@@ -83,6 +86,7 @@
 - `maintainers/**`
 - downstream project-generated files under `project_maintainers/chat/handoff/*.md`
 - downstream project-generated files under `project_maintainers/chat/archive/*.md`
+- downstream project-generated files under `project_maintainers/improvement_candidates/20*.md`
 - `.agent/workflow_baseline_rules.md`
 - `.agent/PORTABLE_WORKFLOW.md`
 - `.agent/PR_PREPARATION.md`

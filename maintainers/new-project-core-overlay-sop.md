@@ -36,6 +36,7 @@
 - curated workflow core 已落到 repo root
 - 專案自己的 overlay 檔已建立，例如 `project_rules.md`
 - `project_maintainers/chat/` skeleton 已存在，可直接寫入 project-local handoff
+- `project_maintainers/improvement_candidates/` skeleton 已存在，可直接記錄候選 reusable 經驗
 - 後續可再追 `workflow-core` release tag 更新
 
 ---
@@ -148,7 +149,7 @@ cd /workspaces/my-new-project
 2. `doc/implementation_plan_index.md`
 3. `.agent/roles/domain_expert.md`
 
-另外，`project_maintainers/chat/` skeleton 會隨 curated core 一起帶入新 repo；它是新專案自己的 supporting handoff surface，不是 template repo `maintainers/` 的延伸。
+另外，`project_maintainers/chat/` 與 `project_maintainers/improvement_candidates/` skeleton 會隨 curated core 一起帶入新 repo；它們是新專案自己的 supporting handoff / candidate surface，不是 template repo `maintainers/` 的延伸。
 
 最小建議內容：
 

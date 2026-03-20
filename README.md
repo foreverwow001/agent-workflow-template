@@ -33,7 +33,7 @@ cd YOUR_NEW_REPO
 2. 後續 upstream 更新只走 `workflow-core` release/sync lane，不再使用 GitHub `Use this template` 複製整包 repo
 3. `maintainers/`、template-only helper、mutable/generated path 都不屬於 downstream canonical surface
 
-另外，curated core 會額外帶出 `project_maintainers/chat/` skeleton，作為 downstream 專案自己的 handoff / archive supporting surface；它和 template repo 自己的 `maintainers/` 是兩套不同用途的目錄。
+另外，curated core 會額外帶出 `project_maintainers/chat/` 與 `project_maintainers/improvement_candidates/` skeleton，作為 downstream 專案自己的 handoff / archive / promotion-candidate supporting surface；它和 template repo 自己的 `maintainers/` 是兩套不同用途的目錄。
 
 > `Use this template` 不再是推薦的 downstream 建專案方式，因為它會複製整個 repository，與目前已定下的 curated core + overlay 邊界不一致。
 
@@ -175,7 +175,8 @@ your-project/
 │   │   └── Idx-000_plan.template.md
 │   └── implementation_plan_index.md  ← 任務索引
 ├── project_maintainers/
-│   └── chat/                   ← downstream project-local handoff / archive surface
+│   ├── chat/                   ← downstream project-local handoff / archive surface
+│   └── improvement_candidates/ ← downstream reusable candidate surface
 └── project_rules.md            ← 專案規則（需填寫）
 ```
 
@@ -211,6 +212,7 @@ graph TD
 - [doc/ENVIRONMENT_RECOVERY.md](doc/ENVIRONMENT_RECOVERY.md) - 環境回復指南
 - [maintainers/index.md](maintainers/index.md) - template 維護者文件索引
 - [project_maintainers/chat/README.md](project_maintainers/chat/README.md) - downstream 專案 handoff / archive skeleton 說明
+- [project_maintainers/improvement_candidates/README.md](project_maintainers/improvement_candidates/README.md) - downstream 專案 improvement candidate skeleton 說明
 
 ## 📦 Downstream 交付原則
 

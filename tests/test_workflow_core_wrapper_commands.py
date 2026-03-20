@@ -85,6 +85,7 @@ def create_required_live_paths(repo_root: Path, include_index: bool = True) -> N
         ".agent/templates",
         "project_maintainers/chat/handoff",
         "project_maintainers/chat/archive",
+        "project_maintainers/improvement_candidates",
         "doc/plans",
         "doc/logs",
     ]:
@@ -96,6 +97,9 @@ def create_required_live_paths(repo_root: Path, include_index: bool = True) -> N
     (repo_root / "project_maintainers" / "chat" / "README.md").write_text("# Project Chat\n", encoding="utf-8")
     (repo_root / "project_maintainers" / "chat" / "handoff" / "SESSION-HANDOFF.template.md").write_text("# SESSION-HANDOFF\n", encoding="utf-8")
     (repo_root / "project_maintainers" / "chat" / "archive" / "README.md").write_text("# Archive\n", encoding="utf-8")
+    (repo_root / "project_maintainers" / "improvement_candidates" / "README.md").write_text("# Improvement Candidates\n", encoding="utf-8")
+    (repo_root / "project_maintainers" / "improvement_candidates" / "IMPROVEMENT-CANDIDATE.template.md").write_text("# IMPROVEMENT-CANDIDATE\n", encoding="utf-8")
+    (repo_root / "project_maintainers" / "improvement_candidates" / "PROMOTION-GUIDE.md").write_text("# Promotion Guide\n", encoding="utf-8")
     (repo_root / "doc" / "plans" / "Idx-000_plan.template.md").write_text("# Plan\n", encoding="utf-8")
     (repo_root / "doc" / "logs" / "Idx-000_log.template.md").write_text("# Log\n", encoding="utf-8")
     if include_index:

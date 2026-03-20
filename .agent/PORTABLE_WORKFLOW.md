@@ -41,12 +41,16 @@ new-project/
 │   │   └── handoff_template.md  ✅ 交接模板（通用）
 │   └── active_sessions.json     🔄 執行時生成
 ├── project_maintainers/
-│   └── chat/
-│       ├── README.md            ✅ downstream project handoff guidance
-│       ├── handoff/
-│       │   └── SESSION-HANDOFF.template.md  ✅ downstream session handoff 模板
-│       └── archive/
-│           └── README.md        ✅ downstream handoff archive guide
+│   ├── chat/
+│   │   ├── README.md            ✅ downstream project handoff guidance
+│   │   ├── handoff/
+│   │   │   └── SESSION-HANDOFF.template.md  ✅ downstream session handoff 模板
+│   │   └── archive/
+│   │       └── README.md        ✅ downstream handoff archive guide
+│   └── improvement_candidates/
+│       ├── README.md            ✅ downstream candidate queue 說明
+│       ├── IMPROVEMENT-CANDIDATE.template.md  ✅ candidate 模板
+│       └── PROMOTION-GUIDE.md   ✅ promotion criteria 與 decision rules
 ├── doc/
 │   ├── plans/
 │   │   └── Idx-000_plan.template.md  ✅ Plan 模板
@@ -68,7 +72,7 @@ new-project/
 
 技能系統的 split contract 也已定型：builtin core catalog 保留在 `.agent/skills/INDEX.md`，external/local skills 安裝到 `.agent/skills_local/`，overlay catalog 則寫到 `.agent/state/skills/INDEX.local.md`。
 
-另外，curated core 現在也會帶出一組 `project_maintainers/chat/` skeleton，讓新專案一開始就具備自己的 chat handoff / archive 落點。這組 skeleton 是 downstream project-local supporting surface，不是 authoritative workflow 規則來源。
+另外，curated core 現在也會帶出 `project_maintainers/chat/` 與 `project_maintainers/improvement_candidates/` skeleton，讓新專案一開始就具備自己的 handoff / archive / candidate 落點。這組 skeleton 是 downstream project-local supporting surface，不是 authoritative workflow 規則來源。
 
 ### Step 0: 先確認最小依賴
 
