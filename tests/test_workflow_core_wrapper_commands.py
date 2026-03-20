@@ -83,6 +83,8 @@ def create_required_live_paths(repo_root: Path, include_index: bool = True) -> N
         ".agent/skills/manifest-updater",
         ".agent/skills/_shared",
         ".agent/templates",
+        "project_maintainers/chat/handoff",
+        "project_maintainers/chat/archive",
         "doc/plans",
         "doc/logs",
     ]:
@@ -90,6 +92,10 @@ def create_required_live_paths(repo_root: Path, include_index: bool = True) -> N
     (repo_root / ".agent" / "workflows" / "AGENT_ENTRY.md").write_text("entry\n", encoding="utf-8")
     (repo_root / ".agent" / "templates" / "handoff_template.md").write_text("template\n", encoding="utf-8")
     (repo_root / ".agent" / "skills" / "_shared" / "__init__.py").write_text("PACKAGED_SKILL_ENTRIES = {}\n", encoding="utf-8")
+    (repo_root / "project_maintainers" / "README.md").write_text("# Project Maintainers\n", encoding="utf-8")
+    (repo_root / "project_maintainers" / "chat" / "README.md").write_text("# Project Chat\n", encoding="utf-8")
+    (repo_root / "project_maintainers" / "chat" / "handoff" / "SESSION-HANDOFF.template.md").write_text("# SESSION-HANDOFF\n", encoding="utf-8")
+    (repo_root / "project_maintainers" / "chat" / "archive" / "README.md").write_text("# Archive\n", encoding="utf-8")
     (repo_root / "doc" / "plans" / "Idx-000_plan.template.md").write_text("# Plan\n", encoding="utf-8")
     (repo_root / "doc" / "logs" / "Idx-000_log.template.md").write_text("# Log\n", encoding="utf-8")
     if include_index:

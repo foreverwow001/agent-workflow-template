@@ -109,6 +109,10 @@ export_profiles:
       - ".agent/skills/skill-converter/**"
       - ".agent/skills/manifest-updater/**"
       - ".agent/templates/handoff_template.md"
+      - "project_maintainers/README.md"
+      - "project_maintainers/chat/README.md"
+      - "project_maintainers/chat/handoff/SESSION-HANDOFF.template.md"
+      - "project_maintainers/chat/archive/README.md"
       - "doc/plans/Idx-000_plan.template.md"
       - "doc/logs/Idx-000_log.template.md"
     excludes:
@@ -399,6 +403,34 @@ managed_paths:
     downstream_edit_policy: "upstream-only"
     reason: "reusable workflow template artifact"
 
+  - path: "project_maintainers/README.md"
+    kind: "file"
+    ownership: "core"
+    sync_policy: "subtree-managed"
+    downstream_edit_policy: "upstream-only"
+    reason: "downstream project maintainer surface skeleton entrypoint"
+
+  - path: "project_maintainers/chat/README.md"
+    kind: "file"
+    ownership: "core"
+    sync_policy: "subtree-managed"
+    downstream_edit_policy: "upstream-only"
+    reason: "downstream project-local chat handoff guidance skeleton"
+
+  - path: "project_maintainers/chat/handoff/SESSION-HANDOFF.template.md"
+    kind: "file"
+    ownership: "core"
+    sync_policy: "subtree-managed"
+    downstream_edit_policy: "upstream-only"
+    reason: "downstream project-local session handoff starter template"
+
+  - path: "project_maintainers/chat/archive/README.md"
+    kind: "file"
+    ownership: "core"
+    sync_policy: "subtree-managed"
+    downstream_edit_policy: "upstream-only"
+    reason: "downstream project-local chat archive governance skeleton"
+
   - path: "doc/plans/Idx-000_plan.template.md"
     kind: "file"
     ownership: "core"
@@ -443,6 +475,16 @@ excluded_paths:
     category: "archive-history"
     policy: "never-export"
     reason: "maintainer governance is template-repo-local history and analysis"
+
+  - path: "project_maintainers/chat/handoff/20*.md"
+    category: "overlay-project-local"
+    policy: "never-export"
+    reason: "downstream project handoff records are local supporting artifacts; only the starter template ships with core"
+
+  - path: "project_maintainers/chat/archive/20*.md"
+    category: "archive-history"
+    policy: "never-export"
+    reason: "downstream project archive content is project-local history; only the archive guide ships with core"
 
   - path: ".agent/workflow_baseline_rules.md"
     category: "template-only"

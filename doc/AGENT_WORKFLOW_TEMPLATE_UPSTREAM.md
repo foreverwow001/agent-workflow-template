@@ -63,6 +63,13 @@
 - `doc/plans/Idx-000_plan.template.md`
 - `doc/logs/Idx-000_log.template.md`
 
+### E. Downstream project maintainer starter surface
+
+- `project_maintainers/README.md`
+- `project_maintainers/chat/README.md`
+- `project_maintainers/chat/handoff/SESSION-HANDOFF.template.md`
+- `project_maintainers/chat/archive/README.md`
+
 ---
 
 ## 3. 明確不屬於 workflow-core export 的內容
@@ -74,6 +81,8 @@
 - active `doc/plans/Idx-*_plan.md`
 - active `doc/logs/Idx-*_log.md`
 - `maintainers/**`
+- downstream project-generated files under `project_maintainers/chat/handoff/*.md`
+- downstream project-generated files under `project_maintainers/chat/archive/*.md`
 - `.agent/workflow_baseline_rules.md`
 - `.agent/PORTABLE_WORKFLOW.md`
 - `.agent/PR_PREPARATION.md`

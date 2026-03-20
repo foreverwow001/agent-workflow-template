@@ -33,6 +33,8 @@ cd YOUR_NEW_REPO
 2. 後續 upstream 更新只走 `workflow-core` release/sync lane，不再使用 GitHub `Use this template` 複製整包 repo
 3. `maintainers/`、template-only helper、mutable/generated path 都不屬於 downstream canonical surface
 
+另外，curated core 會額外帶出 `project_maintainers/chat/` skeleton，作為 downstream 專案自己的 handoff / archive supporting surface；它和 template repo 自己的 `maintainers/` 是兩套不同用途的目錄。
+
 > `Use this template` 不再是推薦的 downstream 建專案方式，因為它會複製整個 repository，與目前已定下的 curated core + overlay 邊界不一致。
 
 ## 🧠 角色技能載入對照表
@@ -118,7 +120,8 @@ python .agent/runtime/scripts/sendtext_bridge_client.py send --terminal-kind cod
 
 - VS Code Settings Sync 可以幫你同步編輯器設定、快捷鍵、extensions 等偏好，但**不等於**把同一段 GitHub Copilot Chat 對話原生同步到另一台電腦。
 - 目前實務上最穩的做法是：同步 repo 與 VS Code 設定，再用 `Chat: Export Chat...` 匯出 JSON，搭配 handoff 摘要接續工作。
-- 原始 chat export 建議放在 `maintainers/chat/*.json` 並留在本機或 OneDrive；可提交的摘要則放在 `maintainers/chat/handoff/`。
+- 若你在維護 template repo，本機原始 chat export 建議放在 `maintainers/chat/*.json`，可提交摘要放在 `maintainers/chat/handoff/`。
+- 若你是在 downstream / 新專案中工作，則建議把可提交摘要放在 `project_maintainers/chat/handoff/`，已完成歷史放在 `project_maintainers/chat/archive/`。
 - 公司的電腦與家裡電腦切換 SOP 請看：`doc/HOME_OFFICE_SWITCH_SOP.md`
 
 > PTY 主路徑與 monitor / capture 契約：請看 `.agent/runtime/tools/vscode_terminal_pty/README.md`。
@@ -171,6 +174,8 @@ your-project/
 │   ├── plans/                  ← 開發計畫
 │   │   └── Idx-000_plan.template.md
 │   └── implementation_plan_index.md  ← 任務索引
+├── project_maintainers/
+│   └── chat/                   ← downstream project-local handoff / archive surface
 └── project_rules.md            ← 專案規則（需填寫）
 ```
 
@@ -205,6 +210,7 @@ graph TD
 - [doc/NEW_MACHINE_SETUP.md](doc/NEW_MACHINE_SETUP.md) - 新機開工流程
 - [doc/ENVIRONMENT_RECOVERY.md](doc/ENVIRONMENT_RECOVERY.md) - 環境回復指南
 - [maintainers/index.md](maintainers/index.md) - template 維護者文件索引
+- [project_maintainers/chat/README.md](project_maintainers/chat/README.md) - downstream 專案 handoff / archive skeleton 說明
 
 ## 📦 Downstream 交付原則
 
