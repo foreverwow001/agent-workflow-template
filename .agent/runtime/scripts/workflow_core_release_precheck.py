@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 import sys
 from pathlib import Path
@@ -23,10 +24,21 @@ EXIT_FAIL = 20
 EXIT_ERROR = 30
 
 
+def load_module(file_path: Path, module_name: str):
+    spec = importlib.util.spec_from_file_location(module_name, file_path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"unable to load module: {file_path}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
 def run_release_precheck(repo_root: Path, manifest_path: Path, release_candidate_ref: str | None = None) -> dict:
     contract = evaluate_manifest_contract(repo_root, manifest_path)
     notes: list[str] = []
     failures: list[str] = []
+    portable_smoke_ok = False
+    portable_smoke_notes: list[str] = []
 
     if not contract["manifest_path_ok"]:
         failures.append("manifest-path-mismatch")
@@ -40,6 +52,14 @@ def run_release_precheck(repo_root: Path, manifest_path: Path, release_candidate
     if not contract["smoke_suite_exists"]:
         failures.append("missing-portable-smoke")
         notes.append("portable smoke suite path is missing")
+    else:
+        smoke_module = load_module(repo_root / contract["smoke_suite_path"], "workflow_core_release_smoke_runtime")
+        smoke_result = smoke_module.run_portable_smoke(repo_root=repo_root, manifest_path=manifest_path)
+        portable_smoke_ok = smoke_result["status"] == "pass"
+        portable_smoke_notes = list(smoke_result.get("notes", []))
+        if not portable_smoke_ok:
+            failures.append("portable-smoke-failed")
+            notes.append("portable smoke suite failed during release precheck")
     if not contract["skills_mutable_split_ok"]:
         failures.append("skills-split-violation")
         notes.append("managed path contract overlaps with mutable skill split targets")
@@ -47,6 +67,7 @@ def run_release_precheck(repo_root: Path, manifest_path: Path, release_candidate
     status = "fail" if failures else "pass"
     if not notes:
         notes.append("release candidate satisfies manifest ownership and live path contract")
+    notes.extend(item for item in portable_smoke_notes if item not in notes)
 
     return {
         "status": status,
@@ -55,6 +76,7 @@ def run_release_precheck(repo_root: Path, manifest_path: Path, release_candidate
         "release_candidate_ref": release_candidate_ref,
         "managed_path_violations": contract["managed_path_violations"],
         "live_path_contract_ok": contract["live_path_contract_ok"],
+        "portable_smoke_ok": portable_smoke_ok,
         "skills_mutable_split_ok": contract["skills_mutable_split_ok"],
         "missing_required_live_paths": contract["required_live_paths"]["missing"],
         "projection_artifact_exists": contract["projection_artifact_exists"],
@@ -70,6 +92,7 @@ def format_text_report(result: dict) -> str:
         f"manifest_path: {result['manifest_path']}",
         f"release_candidate_ref: {result['release_candidate_ref']}",
         f"live_path_contract_ok: {result['live_path_contract_ok']}",
+        f"portable_smoke_ok: {result['portable_smoke_ok']}",
         f"skills_mutable_split_ok: {result['skills_mutable_split_ok']}",
     ]
     if result["managed_path_violations"]:

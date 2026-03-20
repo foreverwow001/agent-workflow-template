@@ -2,27 +2,62 @@
 """
 .agent/skills/__init__.py
 =====================================
-用途：艾薇 Agent Skills 技能庫模組初始化檔案
-職責：提供統一的技能匯入接口，方便未來擴充與管理
+用途：Skills 根模組初始化與公開 package 索引
+職責：提供動態 AVAILABLE_SKILLS、shared metadata 路徑與 canonical package 可見性
 =====================================
 """
 
-from pathlib import Path
+from __future__ import annotations
 
-# 定義技能庫根目錄
-SKILLS_DIR = Path(__file__).parent
+from ._shared import (
+    CONFIG_SKILLS_DIR,
+    CANONICAL_MANIFEST_PATH,
+    CANONICAL_WHITELIST_PATH,
+    INDEX_PATH,
+    LEGACY_MANIFEST_PATH,
+    LEGACY_WHITELIST_PATH,
+    LOCAL_INDEX_PATH,
+    LOCAL_SKILLS_DIR,
+    PACKAGED_SKILL_ENTRIES,
+    PUBLIC_SCHEMAS_DIR,
+    SHARED_DIR,
+    SKILLS_DIR,
+    STATE_SKILLS_DIR,
+    iter_local_skill_package_dirs,
+    iter_skill_package_dirs,
+    package_dir_to_skill_name,
+)
 
-# 技能清單 (供外部查詢)
-AVAILABLE_SKILLS = [
-    "code_reviewer",
-    "doc_generator",
-    "test_runner",
-    "github_explorer",
-    "skill_converter",
-    "plan_validator",
-    "git_stats_reporter",
-    "manifest_updater",
-    "skills_evaluator",
+
+def _scan_available_skills() -> list[str]:
+    discovered = {package_dir_to_skill_name(path.name) for path in iter_skill_package_dirs()}
+    discovered.update(package_dir_to_skill_name(path.name) for path in iter_local_skill_package_dirs())
+    return sorted(discovered)
+
+
+AVAILABLE_SKILLS = _scan_available_skills()
+BUILTIN_PACKAGED_SKILLS = sorted(PACKAGED_SKILL_ENTRIES)
+SHARED_METADATA_PATHS = {
+    "shared_dir": str(SHARED_DIR),
+    "state_dir": str(STATE_SKILLS_DIR),
+    "config_dir": str(CONFIG_SKILLS_DIR),
+    "local_skills_dir": str(LOCAL_SKILLS_DIR),
+    "canonical_manifest": str(CANONICAL_MANIFEST_PATH),
+    "canonical_whitelist": str(CANONICAL_WHITELIST_PATH),
+    "legacy_manifest": str(LEGACY_MANIFEST_PATH),
+    "legacy_whitelist": str(LEGACY_WHITELIST_PATH),
+    "schemas_dir": str(PUBLIC_SCHEMAS_DIR),
+    "index": str(INDEX_PATH),
+    "local_index": str(LOCAL_INDEX_PATH),
+}
+
+
+__all__ = [
+    "SKILLS_DIR",
+    "SHARED_DIR",
+    "PUBLIC_SCHEMAS_DIR",
+    "INDEX_PATH",
+    "AVAILABLE_SKILLS",
+    "BUILTIN_PACKAGED_SKILLS",
+    "SHARED_METADATA_PATHS",
 ]
-
-__all__ = ["SKILLS_DIR", "AVAILABLE_SKILLS"]

@@ -468,7 +468,7 @@ function getConfig() {
           forceKillDelayMs: Math.max(0, Number(cfg.get("copilotCloseForceKillDelayMs", 1500)) || 1500),
         },
         startup: {
-          requireCsiU: true,
+          requireCsiU: false,
           freshPromptDelayMs: 1500,
           composerInputGate: {
             enabled: true,

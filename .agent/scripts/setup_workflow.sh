@@ -48,8 +48,11 @@ echo -e "${BLUE}[1/6] 建立目錄結構...${NC}"
 mkdir -p "$TARGET/.agent/workflows"
 mkdir -p "$TARGET/.agent/roles"
 mkdir -p "$TARGET/.agent/skills"
+mkdir -p "$TARGET/.agent/skills_local"
 mkdir -p "$TARGET/.agent/scripts"
 mkdir -p "$TARGET/.agent/state"
+mkdir -p "$TARGET/.agent/state/skills"
+mkdir -p "$TARGET/.agent/config/skills"
 mkdir -p "$TARGET/.agent/templates"
 mkdir -p "$TARGET/.agent/backup"
 mkdir -p "$TARGET/.agent/mcp"
@@ -69,66 +72,30 @@ echo -e "${BLUE}[3/6] 複製 Roles 檔案...${NC}"
 cp "$SOURCE/roles/planner.md" "$TARGET/.agent/roles/"
 cp "$SOURCE/roles/engineer.md" "$TARGET/.agent/roles/"
 cp "$SOURCE/roles/qa.md" "$TARGET/.agent/roles/"
-# 建立通用的 domain_expert.md 模板
-cat > "$TARGET/.agent/roles/domain_expert.md" << 'EOF'
-```markdown
----
-description: 領域專家 (Domain Expert) - 負責專業領域審核
----
-# Role: 領域專家 (Domain Expert)
-
-## 核心職責
-你是本專案的領域專家。你的工作是檢視 Planner 的 Spec，確認專業邏輯是否正確。
-
-## 專案背景
-- [請依專案調整此段描述]
-
-## 任務流程
-1. 檢視 Planner 的 Spec
-2. 確認專業邏輯是否正確
-3. 提供專業建議
-4. 產出審核報告
-
-## 產出格式
-```markdown
-## 📊 領域專家審核
-
-### 涉及的專業邏輯
-- [列出相關邏輯]
-
-### 建議
-- [任何改進或注意事項]
-
-### 結論
-✅ 通過 / ⚠️ 需要修正
-```
-
-## 必須遵守的規則檔案
-> - 📜 `project_rules.md` - 專案開發核心守則
-```
-EOF
+cp "$SOURCE/roles/domain_expert.md" "$TARGET/.agent/roles/"
+cp "$SOURCE/roles/security.md" "$TARGET/.agent/roles/"
 echo -e "${GREEN}  ✅ Roles 檔案複製完成${NC}"
 
 # Step 4: 複製 Skills 檔案
 echo -e "${BLUE}[4/6] 複製 Skills 檔案...${NC}"
-if [ -f "$SOURCE/skills/code_reviewer.py" ]; then
-    cp "$SOURCE/skills/code_reviewer.py" "$TARGET/.agent/skills/"
-fi
-if [ -f "$SOURCE/skills/doc_generator.py" ]; then
-    cp "$SOURCE/skills/doc_generator.py" "$TARGET/.agent/skills/"
-fi
-if [ -f "$SOURCE/skills/test_runner.py" ]; then
-    cp "$SOURCE/skills/test_runner.py" "$TARGET/.agent/skills/"
-fi
-if [ -f "$SOURCE/skills/SKILL.md" ]; then
-    cp "$SOURCE/skills/SKILL.md" "$TARGET/.agent/skills/"
-fi
-if [ -f "$SOURCE/skills/explore_cli_tool.md" ]; then
-    cp "$SOURCE/skills/explore_cli_tool.md" "$TARGET/.agent/skills/"
+if [ -d "$SOURCE/skills" ]; then
+    cp -r "$SOURCE/skills/." "$TARGET/.agent/skills/"
 fi
 
-# 建立空的 skill_whitelist.json
-echo '{"whitelist": [], "last_updated": "'$(date -Iseconds)'"}' > "$TARGET/.agent/skills/skill_whitelist.json"
+if [ ! -f "$TARGET/.agent/config/skills/skill_whitelist.json" ]; then
+WHITELIST_TEMPLATE='{
+  "version": "1.0",
+  "approved_sources": [],
+  "approval_policy": {
+    "auto_approve_official_orgs": false,
+    "require_manual_approval_for_personal_repos": true,
+    "minimum_stars": 0,
+    "maximum_repo_age_months": 0
+  },
+  "last_updated": "'$(date -Iseconds)'"
+}'
+printf '%s\n' "$WHITELIST_TEMPLATE" > "$TARGET/.agent/config/skills/skill_whitelist.json"
+fi
 echo -e "${GREEN}  ✅ Skills 檔案複製完成${NC}"
 
 # Step 5: 複製 Templates 並建立初始檔案
@@ -210,6 +177,64 @@ cat > "$TARGET/doc/plans/Idx-000_plan.template.md" << 'EOF'
 |------|--------|------|------|
 | - | - | - | - |
 EOF
+
+# 建立 Log 模板
+cat > "$TARGET/doc/logs/Idx-000_log.template.md" << 'EOF'
+# Idx-NNN: [任務名稱] - Execution Log
+
+> 建立日期: YYYY-MM-DD
+> 狀態: Draft | QA | Completed
+
+---
+
+## 🔗 ARTIFACT_CHAIN
+
+- task_id: `Idx-NNN`
+- index_file_path: `doc/implementation_plan_index.md`
+- plan_file_path: `doc/plans/Idx-NNN_plan.md`
+- log_file_path: `doc/logs/Idx-NNN_log.md`
+
+## 🎯 WORKFLOW_SUMMARY
+
+### Goal
+[簡述這次任務要完成什麼]
+
+### Scope
+- [本輪實際處理範圍]
+
+## 🧾 EXECUTION_SUMMARY
+
+| Item | Value |
+|------|-------|
+| executor_tool | [codex-cli|copilot-cli] |
+| security_reviewer_tool | [N/A|codex-cli|copilot-cli] |
+| qa_tool | [codex-cli|copilot-cli] |
+| last_change_tool | [codex-cli|copilot-cli] |
+| qa_result | [PASS|PASS_WITH_RISK|FAIL] |
+| commit_hash | [pending|hash] |
+
+## 🛠️ SKILLS_EXECUTION_REPORT
+
+| Skill | Target | Status | Summary | Timestamp |
+|-------|--------|--------|---------|-----------|
+<!-- SKILLS_EXECUTION_REPORT_ROWS -->
+
+## 📈 SKILLS_EVALUATION
+
+[由 skills_evaluator 回填摘要或統計]
+
+## ✅ QA_SUMMARY
+
+- 結論：[PASS|PASS_WITH_RISK|FAIL]
+- 風險：[若有風險，請列出]
+- 後續事項：[若無則填 None]
+
+## 📎 EVIDENCE
+
+- PTY debug: [例如 `.service/terminal_capture/codex_pty_debug.jsonl`]
+- PTY live: [例如 `.service/terminal_capture/codex_pty_live.txt`]
+- 其他 evidence: [若無則填 None]
+EOF
 echo -e "${GREEN}  ✅ 模板與初始檔案建立完成${NC}"
 
 # Step 6: 複製執行腳本（不含 VS Code 擴充）
@@ -224,8 +249,8 @@ copy_script() {
     fi
 }
 
-	copy_script "$SOURCE/scripts/run_codex_template.sh" "$TARGET/.agent/scripts/"
-	# Note: Terminal Bridge Server 已移除；終端注入與監控改由 VS Code 內建 terminal.sendText + Proposed API 處理。
+copy_script "$SOURCE/scripts/run_codex_template.sh" "$TARGET/.agent/scripts/"
+# Note: workflow 的 terminal 主路徑已改為 VS Code Terminal PTY；legacy fallback 只在 PTY 不可用且使用者同意後才啟用。
 
 echo -e "${GREEN}  ✅ 執行腳本複製完成${NC}"
 
@@ -276,8 +301,11 @@ cat > "$TARGET/project_rules.md" << EOF
 EOF
 echo -e "${GREEN}  ✅ 專案規則檔建立完成${NC}"
 
-# 更新 AGENT_ENTRY.md 中的必讀清單路徑
-echo -e "${BLUE}[額外] 更新 AGENT_ENTRY.md 必讀清單...${NC}"
+# 下游專案不使用 template repo 的 baseline rule source
+rm -f "$TARGET/.agent/workflow_baseline_rules.md"
+
+# 更新 AGENT_ENTRY.md 中的 legacy 路徑字樣
+echo -e "${BLUE}[額外] 更新 AGENT_ENTRY.md 必讀清單/legacy 路徑...${NC}"
 sed -i 's|./ivy_house_rules.md|./project_rules.md|g' "$TARGET/.agent/workflows/AGENT_ENTRY.md"
 sed -i 's|./docs/implementation_plan_index.md|./doc/implementation_plan_index.md|g' "$TARGET/.agent/workflows/AGENT_ENTRY.md"
 echo -e "${GREEN}  ✅ AGENT_ENTRY.md 更新完成${NC}"
@@ -289,23 +317,9 @@ echo -e "${GREEN}✅ Agent Workflow 初始化完成！${NC}"
 echo -e "${GREEN}========================================${NC}"
 echo ""
 echo -e "${YELLOW}📝 後續步驟：${NC}"
-	echo "  1. 編輯 $TARGET/project_rules.md 填入專案資訊"
-	echo "  2. 編輯 $TARGET/.agent/roles/domain_expert.md 客製化領域專家"
-	echo "  3. 在 VS Code 開啟專案，測試輸入 /dev-team"
-	echo ""
-echo -e "${BLUE}📁 已建立的結構：${NC}"
-echo "  $TARGET/"
-echo "  ├── .agent/"
-	echo "  │   ├── workflows/ (AGENT_ENTRY.md, dev-team.md)"
-	echo "  │   ├── roles/ (planner, engineer, qa, domain_expert)"
-	echo "  │   ├── scripts/ (run_codex_template.sh)"
-	echo "  │   ├── state/ (runtime state; tokens/log)"
-	echo "  │   └── templates/"
-echo "  ├── tools/"
-echo "  │   └── (reserved)"
-echo "  │   └── templates/"
-echo "  ├── doc/"
-echo "  │   ├── plans/ (Idx-000_plan.template.md)"
-echo "  │   └── implementation_plan_index.md"
-echo "  └── project_rules.md"
+echo "  1. 編輯 $TARGET/project_rules.md 填入專案資訊"
+echo "  2. 確認下游專案的 active rule source 使用 $TARGET/project_rules.md"
+echo "  3. 編輯 $TARGET/.agent/roles/domain_expert.md 客製化領域專家"
+echo "  4. 視專案需要補充 $TARGET/.agent/roles/security.md 的高風險面"
+echo "  5. 在 VS Code 開啟專案，測試輸入 /dev-team"
 echo ""

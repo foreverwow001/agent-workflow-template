@@ -31,7 +31,7 @@ def default_output_path(repo_root: Path, release_ref: str, output: Path | None) 
     if output.suffix.lower() == ".json":
         return output
     safe_ref = re.sub(r"[^A-Za-z0-9._-]+", "-", release_ref)
-    return output / f"workflow-core-release-{safe_ref}.json"
+    return output / f"workflow-core-release-{safe_ref}.metadata.json"
 
 
 def run_release_create(

@@ -16,10 +16,23 @@
             "properties": {
               "type": {
                 "type": "string",
-                "enum": ["api_key_leak", "file_too_long", "missing_chinese_comment", "other"]
+                "enum": [
+                  "api_key_leak",
+                  "syntax_error",
+                  "shell_true",
+                  "dynamic_code_execution",
+                  "file_too_long",
+                  "function_too_long",
+                  "line_too_long",
+                  "trailing_whitespace",
+                  "bare_except",
+                  "missing_chinese_comment",
+                  "other"
+                ]
               },
               "line": { "type": "integer", "minimum": 1 },
-              "message": { "type": "string" }
+              "message": { "type": "string" },
+              "severity": { "type": "string", "enum": ["critical", "warning", "info"] }
             },
             "additionalProperties": true
           }
@@ -29,10 +42,70 @@
           "required": ["api_key_leak", "file_too_long", "missing_chinese_comment"],
           "properties": {
             "api_key_leak": { "type": "integer", "minimum": 0 },
+            "syntax_error": { "type": "integer", "minimum": 0 },
+            "shell_true": { "type": "integer", "minimum": 0 },
+            "dynamic_code_execution": { "type": "integer", "minimum": 0 },
             "file_too_long": { "type": "integer", "minimum": 0 },
+            "function_too_long": { "type": "integer", "minimum": 0 },
+            "line_too_long": { "type": "integer", "minimum": 0 },
+            "trailing_whitespace": { "type": "integer", "minimum": 0 },
+            "bare_except": { "type": "integer", "minimum": 0 },
             "missing_chinese_comment": { "type": "integer", "minimum": 0 }
           },
           "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    },
+    {
+      "type": "object",
+      "required": ["status", "target", "target_type", "files_reviewed", "results", "summary"],
+      "properties": {
+        "status": { "type": "string", "enum": ["pass", "warning", "fail"] },
+        "target": { "type": "string" },
+        "target_type": { "type": "string", "enum": ["directory", "diff"] },
+        "project_root": { "type": "string" },
+        "files_reviewed": { "type": "integer", "minimum": 0 },
+        "files_with_issues": { "type": "integer", "minimum": 0 },
+        "results": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["status", "file", "line_count", "issues", "summary"],
+            "properties": {
+              "status": { "type": "string", "enum": ["pass", "warning", "fail"] },
+              "file": { "type": "string" },
+              "line_count": { "type": "integer", "minimum": 0 },
+              "issues": { "type": "array" },
+              "summary": { "type": "object" }
+            },
+            "additionalProperties": true
+          }
+        },
+        "summary": {
+          "type": "object",
+          "required": ["api_key_leak", "file_too_long", "missing_chinese_comment", "total_files", "clean_files", "files_with_issues", "files_failed"],
+          "properties": {
+            "api_key_leak": { "type": "integer", "minimum": 0 },
+            "syntax_error": { "type": "integer", "minimum": 0 },
+            "shell_true": { "type": "integer", "minimum": 0 },
+            "dynamic_code_execution": { "type": "integer", "minimum": 0 },
+            "file_too_long": { "type": "integer", "minimum": 0 },
+            "function_too_long": { "type": "integer", "minimum": 0 },
+            "line_too_long": { "type": "integer", "minimum": 0 },
+            "trailing_whitespace": { "type": "integer", "minimum": 0 },
+            "bare_except": { "type": "integer", "minimum": 0 },
+            "missing_chinese_comment": { "type": "integer", "minimum": 0 },
+            "total_files": { "type": "integer", "minimum": 0 },
+            "clean_files": { "type": "integer", "minimum": 0 },
+            "files_with_issues": { "type": "integer", "minimum": 0 },
+            "files_failed": { "type": "integer", "minimum": 0 }
+          },
+          "additionalProperties": true
+        },
+        "skipped_targets": {
+          "type": "array",
+          "items": { "type": "string" }
         }
       },
       "additionalProperties": true
@@ -45,6 +118,19 @@
         "file": { "type": "string" },
         "message": { "type": "string" },
         "issues": { "type": "array" }
+      },
+      "additionalProperties": true
+    },
+    {
+      "type": "object",
+      "required": ["status", "target", "target_type", "message", "issues", "results"],
+      "properties": {
+        "status": { "type": "string", "enum": ["error"] },
+        "target": { "type": "string" },
+        "target_type": { "type": "string", "enum": ["directory", "diff"] },
+        "message": { "type": "string" },
+        "issues": { "type": "array" },
+        "results": { "type": "array" }
       },
       "additionalProperties": true
     }

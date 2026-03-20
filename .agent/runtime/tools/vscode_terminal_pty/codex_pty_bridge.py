@@ -5,6 +5,7 @@ import json
 import os
 import pty
 import select
+import shlex
 import signal
 import struct
 import subprocess
@@ -65,6 +66,44 @@ def close_fd(fd: int | None) -> int | None:
     except OSError:
         pass
     return None
+
+
+def resolve_command_for_spawn(command: list[str]) -> list[str]:
+    if not command:
+        return command
+
+    candidate = command[0]
+    if not os.path.isfile(candidate):
+        return command
+
+    try:
+        with open(candidate, "rb") as handle:
+            header = handle.read(256)
+    except OSError:
+        return command
+
+    if not header.startswith(b"#!"):
+        return command
+
+    try:
+        shebang = header.splitlines()[0].decode("utf-8", errors="ignore")[2:].strip()
+    except IndexError:
+        return command
+
+    if not shebang:
+        return command
+
+    try:
+        interpreter_command = shlex.split(shebang)
+    except ValueError:
+        return command
+
+    if not interpreter_command:
+        return command
+
+    # Open shebang scripts through their interpreter to avoid ETXTBSY when VS Code
+    # extensions update wrapper scripts during window reload or startup.
+    return [*interpreter_command, candidate, *command[1:]]
 
 
 def forward_stream(
@@ -180,6 +219,8 @@ def main() -> int:
     if not command:
         print("[pty-bridge] missing command", file=sys.stderr, flush=True)
         return 2
+
+    command = resolve_command_for_spawn(command)
 
     master_fd, slave_fd = pty.openpty()
     set_winsize(slave_fd, args.rows, args.cols)
