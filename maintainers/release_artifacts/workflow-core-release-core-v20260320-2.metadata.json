@@ -1,0 +1,9 @@
+{
+  "release_ref": "core-v20260320-2",
+  "source_ref": "56b4a27c628507493dc99f2657755a14852fdb62",
+  "manifest_path": "/workspaces/agent-workflow-template/core_ownership_manifest.yml",
+  "requires_projection": true,
+  "requires_manual_followup": false,
+  "breaking_contracts": [],
+  "migration_notes": []
+}

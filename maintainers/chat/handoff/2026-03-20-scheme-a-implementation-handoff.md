@@ -2,7 +2,7 @@
 
 ## Current goal
 
-本輪真正剩下的事情已縮成 release formalization：remote staged-sync phase-2 transport 已實作為 `workflow_core_sync_stage.py`，獨立 downstream remote-stage e2e 也已固化成 versioned maintainer artifact，full test suite 目前為 `57 passed, 17 subtests passed`。接下來要做的是：1. 把這批未提交變更整理成正式 commit；2. 以該最終 code HEAD 建立 `core-v20260320-2`；3. 跑新的 release chain，將 metadata / notes artifacts 納入版本控制並 push。
+本輪 engineering work 已完成並形成 release source commit `56b4a27 feat: add workflow-core remote sync stage`，`core-v20260320-2` tag 也已建立在該 commit 上；release chain 已成功產出新的 metadata / notes artifacts。剩餘動作只差最後一步：把 `maintainers/release_artifacts/workflow-core-release-core-v20260320-2.{metadata.json,md,json}` 與本 handoff 的最終狀態一起提交並 push。
 
 ## Current branch
 
@@ -27,6 +27,9 @@ main
 - `maintainers/chat/handoff/core-overlay/remote-stage-e2e-core-v20260320-2.json`
 - `maintainers/chat/handoff/core-overlay/daily-sync-sop.md`
 - `maintainers/chat/handoff/core-overlay/sync-checklist.md`
+- `maintainers/release_artifacts/workflow-core-release-core-v20260320-2.metadata.json`
+- `maintainers/release_artifacts/workflow-core-release-core-v20260320-2.md`
+- `maintainers/release_artifacts/workflow-core-release-core-v20260320-2.json`
 - `tests/test_workflow_core_wrapper_commands.py`
 
 ## What has been confirmed
@@ -66,13 +69,18 @@ main
 - core-overlay maintainer docs 已補齊 `sync stage` lane：`cli-spec.md`、`sync-checklist.md`、`daily-sync-sop.md` 與 `README.md` 現已對齊 `sync stage -> precheck -> apply -> verify` 的實際順序與 contract。
 - `core_ownership_manifest.yml` 的 automation contract 已將 `workflow-core sync stage` 納入 `commands_must_read_manifest`。
 - full `pytest` 已在這一輪 remote-stage 變更上跑完並通過：`57 passed, 17 subtests passed`。
-- 目前 `HEAD` 仍是 `bb63a4e999dafd188d50863f7eb1c2c644b1790a`；本輪 remote-stage 相關變更尚未 commit，worktree 不乾淨，release tag 尚未建立。
+- 本輪 remote-stage 實作已整理成正式 commit：`56b4a27 feat: add workflow-core remote sync stage`。
+- 新的 workflow-core release tag 已建立：`core-v20260320-2 -> 56b4a27c628507493dc99f2657755a14852fdb62`。
+- 新的 release chain 已成功產出 artifacts：
+	- `maintainers/release_artifacts/workflow-core-release-core-v20260320-2.metadata.json`
+	- `maintainers/release_artifacts/workflow-core-release-core-v20260320-2.md`
+	- `maintainers/release_artifacts/workflow-core-release-core-v20260320-2.json`
 
 ## Current stage
 
-- `bb63a4e` 仍是當前已提交基線，但本輪又在其上新增了 remote-stage wrapper、warning gate 修正、docs 對齊與 versioned e2e artifact；這批變更目前停留在 working tree。
-- 最新正式 workflow-core release tag 仍是 `core-v20260320-1`；新的 `core-v20260320-2` 尚未建立，因此 downstream 若只追 tag，仍看不到本輪 remote-stage delivery。
-- 本輪工程上的未完成項目其實只剩 release formalization：把目前工作樹變更提交、建立 `core-v20260320-2`、跑 release chain、將新的 metadata / notes artifacts commit 並 push。
+- remote-stage wrapper、warning gate 修正、docs 對齊、versioned e2e artifact 與 release source commit 都已完成。
+- `core-v20260320-2` 已存在並指向 `56b4a27`，release metadata / notes 也已生成，但這三個 release artifact 尚未 commit。
+- 目前最後剩餘步驟只有：提交 release artifacts，然後 push `main` 與 tag `core-v20260320-2`。
 
 ## What was rejected
 
@@ -85,13 +93,13 @@ main
 
 ## Next exact prompt
 
-請先讀 `maintainers/chat/handoff/2026-03-20-scheme-a-implementation-handoff.md`，再對照 `core_ownership_manifest.yml`、`.agent/runtime/scripts/workflow_core_sync_stage.py`、`.agent/runtime/scripts/workflow_core_manifest.py`、`.agent/runtime/scripts/workflow_core_contracts.py`、`.agent/runtime/scripts/workflow_core_sync_apply.py`、`doc/AGENT_WORKFLOW_TEMPLATE_UPSTREAM.md`、`maintainers/chat/handoff/core-overlay/cli-spec.md`、`maintainers/chat/handoff/core-overlay/sync-checklist.md`、`maintainers/chat/handoff/core-overlay/daily-sync-sop.md` 與 `maintainers/chat/handoff/core-overlay/remote-stage-e2e-core-v20260320-2.md`。目前 remote-stage transport 與 versioned e2e artifact 都已落地，full `pytest` 為 `57 passed, 17 subtests passed`，但這批變更仍未 commit，正式 release tag 仍停在 `core-v20260320-1`。下一步請直接完成 release formalization：1. 把當前工作樹整理成正式 commit；2. 以該 commit 建立 `core-v20260320-2`；3. 執行 `workflow_core_release_create.py` 與 `workflow_core_release_publish_notes.py`，將新的 artifacts 納入版本控制並 push。
+請先讀 `maintainers/chat/handoff/2026-03-20-scheme-a-implementation-handoff.md`，再確認 `maintainers/release_artifacts/workflow-core-release-core-v20260320-2.metadata.json`、`.md`、`.json` 三個 artifacts 與 tag `core-v20260320-2` 都存在。接下來只要把 release artifacts 連同 handoff 最終狀態提交到 `main`，然後 push branch 和 tag 即可。
 
 ## Risks
 
-- 目前 remote-stage wrapper 尚未正式 commit / tag；若現在中斷，repo 內只有 working tree 變更，downstream 仍無法透過正式 release tag 取得這批 transport 改動。
+- `core-v20260320-2` 雖已建立，但 release artifacts 目前尚未 commit；若現在中斷，tag 雖可用，repo 內的 release history 仍缺這一版的 metadata / notes 記錄。
 - 新的 `workflow_core_sync_stage.py` 目前採用「fetch remote ref -> 讀 source-ref manifest -> materialize curated export tree 到 staging root」模型；這已滿足 phase-2 remote transport，但若未來要與真正 `git subtree` 原生命令完全對齊，仍可能需要再定義額外的 transport owner / ref naming governance。
-- release artifacts 目前只存在 `core-v20260320-1`；完成 `core-v20260320-2` 前，release history 仍落後最新已驗證 contract。
+- release history 現在已產出 `core-v20260320-2` artifacts，但仍需透過最後的 artifact commit 才會在 `main` 上形成完整可追溯紀錄。
 - `core_ownership_manifest.yml` 的 curated package 清單已比 2026-03-19 初稿更前進；後續若 skills tree 再變動，仍要防止 `builtin_core_packages`、`review_required_package_dirs` 與 `export_profiles.curated-core-v1` 漂移。
 - release artifacts 現在已 versioned；未來每次 release chain 都應保持 artifact 產出位置、檔名規則與 git-tracked 歷史一致。
 - `maintainers/chat/2026-03-19-core-ownership-manifest-v1.md` 與 `2026-03-19-subtree-mutable-path-split-checklist.md` 仍是 2026-03-19 基線文件；它們的 framing 仍有效，但內容已落後目前 manifest curated scope 與已完成項目，後續若持續沿用，最好補一份 archive / delta note。
@@ -107,6 +115,8 @@ main
 - 已驗證：core-overlay maintainer docs 已對齊 `sync stage -> precheck -> apply -> verify` 與 verified downstream flow。
 - 已驗證：versioned maintainer artifact 已入 repo：`remote-stage-e2e-core-v20260320-2.md` / `.json`。
 - 已驗證：後續 full `pytest` 為綠燈，最新整體結果為 `57 passed, 17 subtests passed`。
-- 已驗證：`bb63a4e` 仍是目前已提交基線；本輪 remote-stage 變更尚未 commit、尚未推送、尚未建立新 release tag。
+- 已驗證：本輪 remote-stage 變更已提交為 `56b4a27 feat: add workflow-core remote sync stage`。
+- 已驗證：`workflow_core_release_create.py --release-ref core-v20260320-2 --source-ref HEAD` 為 `pass`，並已建立 tag 與 metadata artifact。
+- 已驗證：`workflow_core_release_publish_notes.py --release-ref core-v20260320-2 --metadata ...` 為 `pass`，並已建立 markdown notes 與 sidecar JSON。
 - 已驗證：遠端 stale branches 已清除。
-- 尚未完成：將本輪 remote-stage 變更整理成正式 commit、建立 `core-v20260320-2`、執行新的 release chain、提交 artifacts 並 push。
+- 尚未完成：提交新的 release artifacts，並將 `main` 與 tag `core-v20260320-2` 推到遠端。
