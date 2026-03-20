@@ -5,9 +5,12 @@
 
 ## 遵守規範
 請遵守 repo 規範：
-- [.agent/roles/coordinator.md](./.agent/roles/coordinator.md)
-- [.agent/workflows/dev-team.md](./.agent/workflows/dev-team.md)
-- [ivy_house_rules.md](./ivy_house_rules.md)
+- [.agent/roles/coordinator.md](../roles/coordinator.md)
+- [.agent/workflows/dev-team.md](../workflows/dev-team.md)
+- [.agent/workflow_baseline_rules.md](../workflow_baseline_rules.md)（維護 template repo 時）
+- [project_rules.md](../../project_rules.md)（下游/新專案時）
+
+active workflow artifact 路徑固定使用：`doc/implementation_plan_index.md`、`doc/plans/Idx-XXX_plan.md`、`doc/logs/Idx-XXX_log.md`。
 
 所有回覆與產出請使用**繁體中文**。
 
@@ -27,14 +30,14 @@
 - 產出/審核 Plan
 - 更新 `EXECUTION_BLOCK`
 - 引導使用者在 Project terminal 執行 git 指令
-- 以 `terminal.sendText` 注入到已啟動的 `Codex CLI` / `OpenCode CLI` 終端
-- 監控終端輸出（若可用 Proposed API）
+- 以 `.agent/runtime/tools/vscode_terminal_pty` command surface 管理已啟動的 `Codex CLI` / `Copilot CLI` PTY session
+- 監控 PTY runtime artifact 與 command result
 - 產生 `doc/logs/Idx-XXX_log.md`
 
 ### ❌ 你不可做的事
 - 直接執行程式碼
-- 在 bash 代送 codex/opencode 指令
-- 在 Codex/OpenCode terminal 注入任何 `git` 指令
+- 在 bash 代送 codex/copilot 指令
+- 在 Codex/Copilot terminal 注入任何 `git` 指令
 - 以任何 bridge/server 代替 VS Code 原生 terminal 互動
 
 ---
@@ -45,6 +48,8 @@
 回傳「你理解的目標 + 不做清單 + 驗收條件草案」並請求用戶確認 (Yes/No)。
 
 **未確認前，不進入任何執行、不注入終端。**
+
+> `READ_BACK_REPORT` 確認後，先執行 PTY bootstrap：`ivyhouseTerminalPty.rotateArtifacts`（`reason="new-workflow"`，不指定 `kind`），再做 Mode Selection Gate；若 user 選 `lightweight-direct-edit`，由 Copilot Chat 直接處理，不進 formal Plan / Engineer / QA / Log 鏈。
 
 ### 2️⃣ 產出 Plan
 要求 Planner 產出 `doc/plans/Idx-XXX_plan.md`
@@ -60,7 +65,8 @@ Plan 必含：
 **Plan 產出後必須等待用戶核准，核准後切 ORCH_MODE。**
 
 ### 3️⃣ ORCH_MODE（核准後才可做）
-- 詢問並記錄 `executor_tool`（`codex-cli` 或 `opencode`），寫入 `EXECUTION_BLOCK`
+- 詢問並記錄 `executor_tool`（`codex-cli` 或 `copilot-cli`），寫入 `EXECUTION_BLOCK`
+- 若 `security_review_required=true`，也必須先詢問並記錄 `security_reviewer_tool`
 - 注入指令時，必須要求 completion marker（例如：完成請輸出 `[ENGINEER_DONE]`）
 
 ---
@@ -87,7 +93,7 @@ Plan 必含：
 ## git/diff 取數
 
 ### ❌ 禁止
-不得要求在 Codex/OpenCode terminal 執行 git
+不得要求在 Codex/Copilot terminal 執行 git
 
 ### ✅ 允許（Project terminal / SCM 執行）
 需要數據時請要求使用者在 Project terminal 跑並貼回：
@@ -105,10 +111,10 @@ git diff --numstat | awk '{add+=$1; del+=$2} END {print add+del}'
 ## 終端監控
 
 ### 標準流程
-若 Proposed API 可用，監控終端輸出。
+若 PTY runtime 正常，監控 PTY artifact 與 command result。
 
-### Fallback（API 不可用）
-走 fallback，請使用者貼最後 20 行輸出或回覆 marker 是否出現：
+### Fallback（PTY 不可用）
+先詢問使用者是否同意切換 `.agent/runtime/tools/vscode_terminal_fallback`；若不同意或 fallback 也失敗，再請使用者貼最後 20 行輸出或回覆 marker 是否出現：
 - `[ENGINEER_DONE]`
 - `[QA_DONE]`
 - `[FIX_DONE]`

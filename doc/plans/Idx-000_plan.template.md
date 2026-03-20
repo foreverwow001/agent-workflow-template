@@ -116,28 +116,46 @@ plan_approved: [YYYY-MM-DD HH:mm:ss]
 scope_policy: [strict|flexible]
 expert_required: [true|false]
 expert_conclusion: [N/A|結論摘要]
-execution_backend_policy: [extension-sendtext-required]
+security_review_required: [true|false]
+security_reviewer_tool: [N/A|待用戶確認: codex-cli|copilot-cli]
+security_review_trigger_source: [none|user|coordinator|path-rule|keyword-rule|mixed]
+security_review_trigger_matches: []
+security_review_start: [N/A|YYYY-MM-DD HH:mm:ss]
+security_review_end: [N/A|YYYY-MM-DD HH:mm:ss]
+security_review_result: [N/A|PASS|PASS_WITH_RISK|FAIL]
+security_review_conclusion: [N/A|結論摘要]
+execution_backend_policy: [pty-primary-with-consented-fallback]
 scope_exceptions: []
 
 # Engineer 執行
-executor_tool: [待用戶確認: codex-cli|opencode]
-executor_backend: [ivyhouse_sendtext_extension]
-monitor_backend: [proposed_api_monitor|ivyhouse_monitor_extension_fallback|manual_confirmation]
+executor_tool: [待用戶確認: codex-cli|copilot-cli]
+executor_backend: [ivyhouse_terminal_pty|ivyhouse_terminal_fallback]
+monitor_backend: [pty_runtime_monitor|fallback_runtime_monitor|manual_confirmation]
 executor_tool_version: [version number]
 executor_user: [github-account or email]
 executor_start: [執行開始時間]
 executor_end: [執行結束時間]
 session_id: [terminal session ID if available]
-last_change_tool: [codex-cli|opencode]
+last_change_tool: [codex-cli|copilot-cli]
 
 # QA 執行
-qa_tool: [待用戶確認: codex-cli|opencode]
+qa_tool: [待用戶確認: codex-cli|copilot-cli]
 qa_tool_version: [version number]
 qa_user: [github-account or email]
 qa_start: [QA 開始時間]
 qa_end: [QA 結束時間]
 qa_result: [PASS|PASS_WITH_RISK|FAIL]
 qa_compliance: [✅ 符合|⚠️ 例外：原因]
+
+# 任務注入提醒（Coordinator 派發時不可省略）
+# Security Reviewer：必須附上
+#   cat .agent/skills/security-review-helper/SKILL.md
+#   cat .agent/skills/security-review-helper/references/security_checklist.md
+# QA：必須附上至少一條 code-reviewer 命令
+#   python .agent/skills/code-reviewer/scripts/code_reviewer.py <file_path|directory|diff>
+#   或 python .agent/skills/code-reviewer/scripts/code_reviewer.py git diff --staged|--cached|<base>..<head> .
+# 若專案有測試，也必須附上
+#   python .agent/skills/test-runner/scripts/test_runner.py [test_path]
 
 # 收尾
 log_file_path: [doc/logs/Idx-XXX_log.md]
@@ -147,35 +165,36 @@ rollback_reason: [N/A|原因]
 rollback_files: [N/A|檔案清單]
 <!-- EXECUTION_BLOCK_END -->
 
-> ⚠️ **注意**：`last_change_tool` 只允許 `codex-cli` 或 `opencode`，不含 `copilot`（Copilot 固定為 Coordinator，不做實作）。
+> ⚠️ **注意**：`last_change_tool` 只允許 `codex-cli` 或 `copilot-cli`，不含 `GitHub Copilot Chat`（Copilot Chat 固定為 Coordinator，不做實作）。
 
 ### 執行模式建議
 
 | 工具 | 適用場景 | 優勢 | 限制 | 需要監控 |
 |------|---------|------|------|----------|
-| **GitHub Copilot Chat（Coordinator）** | 目標確認、分派、更新 Plan/Log | extension sendText 注入 + Proposed API 監控（含 extension 監測備援） | 不直接執行/QA（由終端工具負責） | ✅ 是 |
-| **Codex CLI（VS Code Terminal）** | 批次檔案操作、模板化工作、大規模重構 | 執行速度快、適合批次 | 需由 Coordinator 注入/監控 | ✅ 是 |
-| **OpenCode CLI（VS Code Terminal）** | 需要互動式終端操作/實跑指令 | 終端整合強、適合互動 | 需由 Coordinator 注入/監控 | ✅ 是 |
+| **GitHub Copilot Chat（Coordinator）** | 目標確認、分派、更新 Plan/Log | PTY command surface 協調 + PTY artifact 監控 | 不直接執行/QA（由終端工具負責） | ✅ 是 |
+| **Codex CLI（PTY-backed VS Code Terminal）** | 批次檔案操作、模板化工作、大規模重構 | 執行速度快、適合批次 | 需由 Coordinator 透過 PTY 管理/監控 | ✅ 是 |
+| **Copilot CLI（PTY-backed VS Code Terminal）** | 需要互動式終端操作/實跑指令 | 終端整合強、適合互動 | 需由 Coordinator 透過 PTY 管理/監控 | ✅ 是 |
 
 ### 執行後端策略（主從）
 
 | 策略 | 說明 | 使用時機 |
 |------|------|---------|
-| `extension-sendtext-required` | 命令注入固定使用 IvyHouse Terminal Injector extension sendText | 預設且固定 |
-| `proposed_api_monitor` | 監測主路徑使用 VS Code Proposed API | 預設 |
-| `ivyhouse_monitor_extension_fallback` | Proposed API 不可用時，使用 extension 監測模式（capture/polling） | 條件式啟用 |
+| `pty-primary-with-consented-fallback` | workflow 的 prompt / submit / verify / monitor 以 PTY 為主；fallback 需經 user 同意 | 預設且固定 |
+| `pty_runtime_monitor` | 監測主路徑使用 PTY structured artifact 與 command result | 預設 |
+| `fallback_runtime_monitor` | PTY 不可用時，使用 fallback runtime（capture/polling/bridge） | 條件式啟用 |
 
-> ✅ 可採雙 extension：Injector（sendText）+ Monitor（監測 fallback）；兩者責任需在 Plan 明確記錄。
-> ✅ 命令名稱建議：Injector 使用 `IvyHouse Injector: Send Text to Codex Terminal` / `IvyHouse Injector: Send Text to OpenCode Terminal`；Monitor 使用 `IvyHouse Monitor: Capture Codex Output` / `IvyHouse Monitor: Auto-Capture Codex /status`。
+> ✅ workflow 主路徑命令名稱建議：`ivyhouseTerminalPty.startCodex`、`ivyhouseTerminalPty.sendToCodex`、`ivyhouseTerminalPty.submitCodex`、`ivyhouseTerminalPty.verifyCodex`。
+> ✅ 若 PTY 不可用且 user 同意 fallback，再改用 `ivyhouseTerminalFallback.*`。
+> ✅ fallback-ready 不再只看 `proposed_api_true`；若 shell integration attachment + bridge/token/artifact compatibility 成立，也可視為可接手。
 
-> ⚠️ 預設不使用 HTTP SendText Bridge。若要啟用，必須先取得 user 明確同意，並在 Plan/Log 記錄原因。
+> ⚠️ 預設不使用 fallback HTTP bridge。若要啟用，必須先取得 user 明確同意，並在 Plan/Log 記錄原因。
 
 ### QA 模式建議
 
 | Executor Tool | 建議 QA Tool | 理由 |
 |---------------|--------------|------|
-| Codex CLI | OpenCode | 避免同工具自審，保留交叉驗證 |
-| OpenCode | Codex CLI | 避免同工具自審，保留交叉驗證 |
+| Codex CLI | Copilot CLI | 避免同工具自審，保留交叉驗證 |
+| Copilot CLI | Codex CLI | 避免同工具自審，保留交叉驗證 |
 
 **Cross-QA 例外情況**：
 
@@ -222,15 +241,17 @@ rollback_files: [N/A|檔案清單]
 
 > 🛑 **必要停頓點**：Planner 產出 Spec 後，必須等待用戶確認才能進入 Step 2。
 
-- [ ] Spec 已確認，可進入 Step 2 (Meta Expert)
-- [ ] Engineer Tool 已選擇：`[codex-cli|opencode]`（並已寫入 EXECUTION_BLOCK）
-- [ ] QA Tool 已選擇：`[codex-cli|opencode]`（必須 ≠ last_change_tool，並已寫入 EXECUTION_BLOCK）
-- [ ] Execution Backend Policy 已確認：`[extension-sendtext-required]`（並已寫入 EXECUTION_BLOCK）
-- [ ] Monitor Backend Policy 已確認：`[proposed-primary-with-extension-fallback]`（並已寫入 EXECUTION_BLOCK）
+- [ ] Spec 已確認，可進入 Step 2 (Domain Expert)
+- [ ] Security Review Policy 已確認：`[true|false]`（並已寫入 EXECUTION_BLOCK）
+- [ ] Security Reviewer Tool 已確認：`[N/A|codex-cli|copilot-cli]`（若 `security_review_required=true` 則必填，並已寫入 EXECUTION_BLOCK）
+- [ ] Engineer Tool 已選擇：`[codex-cli|copilot-cli]`（並已寫入 EXECUTION_BLOCK）
+- [ ] QA Tool 已選擇：`[codex-cli|copilot-cli]`（必須 ≠ last_change_tool，並已寫入 EXECUTION_BLOCK）
+- [ ] Execution Backend Policy 已確認：`[pty-primary-with-consented-fallback]`（並已寫入 EXECUTION_BLOCK）
+- [ ] Monitor Backend Policy 已確認：`[pty-runtime-primary]`（並已寫入 EXECUTION_BLOCK）
 - [ ] Terminal 管理策略已確認
 
 ---
 
-**Template Version**: 2.5.0
-**Last Updated**: 2026-02-18
-**Synced With**: .agent/roles/coordinator.md v1.6.0
+**Template Version**: 2.6.1
+**Last Updated**: 2026-03-14
+**Synced With**: .agent/roles/coordinator.md v1.8.0

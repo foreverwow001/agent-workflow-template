@@ -6,7 +6,7 @@
 
 | Task ID | 名稱 | 狀態 | 建立日期 | 完成日期 | 負責人 | Plan 連結 |
 |---------|------|------|---------|---------|--------|----------|
-| Idx-001 | [首個任務範例] | Planning | 2026-01-10 | - | - | [Plan](plans/Idx-001_plan.md) |
+| Idx-000 | [Plan 模板] | Template | 2026-01-10 | - | - | [Template](plans/Idx-000_plan.template.md) |
 
 ## 📊 狀態說明
 

@@ -37,6 +37,8 @@
 
 並等待確認後再進入執行。
 
+若 `READ_BACK_REPORT` 已通過、且準備進入正式 `/dev` 任務，先執行 PTY bootstrap：`ivyhouseTerminalPty.rotateArtifacts`，並帶 `reason="new-workflow"`；未指定 `kind` 時，視為一次 rotate `codex` 與 `copilot` 的 current artifact，再進 Mode Selection Gate / Plan。
+
 ---
 
 ## 相容別名

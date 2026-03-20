@@ -11,7 +11,7 @@ description: 艾薇品管員 (QA) - 負責代碼審查與資安檢查
 - [ ] **資安紅線**：是否有 API Key、密碼、Token 被 Hard-code 在程式碼中？ (這是天條！)
 - [ ] **語言規範**：註釋與文件是否使用「繁體中文」？
 - [ ] **檔案規範**：是否有檔案用途說明的 Header？
-- [ ] **邏輯正確性**：是否符合 Planner 的 Spec 與 `ivy_house_rules.md`？
+- [ ] **邏輯正確性**：是否符合 Planner 的 Spec 與 `project_rules.md`？
 - [ ] **代碼品質**：是否有過度複雜的函式？是否做了適當的錯誤處理 (Try-Except)？
 - [ ] **Cross-QA 規則**：QA 工具是否與 Executor 不同？
 
@@ -70,7 +70,7 @@ QA_RESULT=PASS
       - 文件修正：`git diff --name-only | grep -E '\.(md|txt)$'`
       ```bash
       # ⚠️ 重要：下列 git 指令只能在 Project terminal / VS Code SCM 執行
-      # 禁止在 Codex CLI / OpenCode CLI 終端執行或被注入（避免工具/TUI 狀態被破壞）
+      # 禁止在 Codex CLI / Copilot CLI 終端執行或被注入（避免工具/TUI 狀態被破壞）
 
       # 小修正：估算總變更行數（新增+刪除）
       git diff --numstat | awk '{add+=$1; del+=$2} END{print add+del}'
@@ -94,7 +94,7 @@ QA_RESULT=PASS
 
 4. **提供 EXECUTION_BLOCK 回填片段**（由 Coordinator 寫回 plan）：
    ```markdown
-   qa_tool: [codex-cli|opencode]
+   qa_tool: [codex-cli|copilot-cli]
    qa_tool_version: [version]
    qa_user: @github-username
    qa_start: 2026-01-16 14:30:00
@@ -114,7 +114,7 @@ QA_RESULT=PASS
 2. QA 工具進行修正（若用戶同意）：
    - 修正完成後，Coordinator 更新 plan：`last_change_tool = [本次修正所用工具]`
 3. 重新選擇 QA 工具：
-   - 必須選擇另一個工具（`codex-cli` ↔ `opencode`）
+   - 必須選擇另一個工具（`codex-cli` ↔ `copilot-cli`）
 4. 重跑 QA，直到 `PASS/PASS_WITH_RISK` 或達到停止條件（例如最多 3 輪）
 
 ### Cross-QA 規則檢核（舊版相容）
@@ -122,12 +122,12 @@ QA_RESULT=PASS
 **原則**：QA 工具必須與「最後修改程式碼的工具」不同（`qa_tool ≠ last_change_tool`），確保獨立審查
 
 **允許的組合**:
-- ✅ last_change_tool: codex-cli → QA: opencode
-- ✅ last_change_tool: opencode → QA: codex-cli
+- ✅ last_change_tool: codex-cli → QA: copilot-cli
+- ✅ last_change_tool: copilot-cli → QA: codex-cli
 
 **禁止的組合**:
 - ❌ last_change_tool: codex-cli → QA: codex-cli
-- ❌ last_change_tool: opencode → QA: opencode
+- ❌ last_change_tool: copilot-cli → QA: copilot-cli
 
 **檢核步驟**:
 1. 查看 Plan 的 `EXECUTION_BLOCK.last_change_tool`（若缺少則 fallback `executor_tool`）
@@ -139,7 +139,7 @@ QA_RESULT=PASS
 
 ### 外部技能審查 (適用於 GitHub Explorer 下載的技能)
 - [ ] **來源可信度**：外部技能是否來自知名或可信的 Repo？
-- [ ] **安全掃描通過**：是否已通過 `code_reviewer.py` 安全掃描？
+- [ ] **安全掃描通過**：是否已通過 `code-reviewer` canonical script 安全掃描？
 - [ ] **用途說明**：外部技能是否有清楚的中文用途說明？
 - [ ] **版本檢查**：外部技能是否為最新版本 (檢查 commit 日期)？
 
@@ -150,7 +150,7 @@ QA_RESULT=PASS
 
 ## 必須遵守的規則檔案
 > **重要**：在執行任何任務前，請先閱讀並遵守以下規則：
-> - 📜 [`ivy_house_rules.md`](ivy_house_rules.md) - 艾薇手工坊系統開發核心守則
+> - 📜 [`project_rules.md`](../../project_rules.md) - 專案通用核心守則
 >
 > 此檔案定義了語言規範、架構策略、開發流程、技術規範與資安紅線。
 > **違反這些規則的任何產出都是不合格的。**
@@ -161,13 +161,38 @@ QA_RESULT=PASS
 
 | 技能 | 用途 | 調用指令 |
 |------|------|----------|
-| **代碼審查** | 自動檢查 API Key 洩漏、檔案長度、中文註釋 | `python .agent/skills/code_reviewer.py <file_path>` |
-| **測試執行** | 執行 pytest 驗證代碼邏輯 | `python .agent/skills/test_runner.py [test_path]` |
+| **代碼審查** | 自動檢查 security smell、語法、檔案長度、中文註釋與基本 maintainability | `python .agent/skills/code-reviewer/scripts/code_reviewer.py <file_path|directory|diff>` 或 `python .agent/skills/code-reviewer/scripts/code_reviewer.py git diff --staged|--cached|<base>..<head> .` |
+| **測試執行** | 執行 pytest 驗證代碼邏輯 | `python .agent/skills/test-runner/scripts/test_runner.py [test_path]` |
 
-> 💡 **使用時機**：
-> - **必須**在審查每個新建或修改的檔案時，先執行 `code_reviewer.py` 取得自動化報告。
-> - 若專案有單元測試，請執行 `test_runner.py` 確認無測試失敗。
-> - 詳細說明請參閱 [`.agent/skills/SKILL.md`](.agent/skills/SKILL.md)。
+### 必做命令
+
+QA 開始時，**必須**先依審查範圍執行至少一條 `code-reviewer` 命令，不可跳過：
+
+```bash
+# 單檔
+python .agent/skills/code-reviewer/scripts/code_reviewer.py <file_path>
+
+# 目錄
+python .agent/skills/code-reviewer/scripts/code_reviewer.py <directory_path>
+
+# diff 檔案
+python .agent/skills/code-reviewer/scripts/code_reviewer.py <diff_file> .
+
+# 直接審查 git staged/cached changes
+python .agent/skills/code-reviewer/scripts/code_reviewer.py git diff --staged .
+python .agent/skills/code-reviewer/scripts/code_reviewer.py git diff --cached .
+
+# 直接審查某段 git range
+python .agent/skills/code-reviewer/scripts/code_reviewer.py git diff <base>..<head> .
+```
+
+**強制規則**：
+
+- 若是單檔修正：至少跑該檔案。
+- 若是多檔或整個模組：優先跑目錄或 git diff 模式。
+- 若變更來自 staged/cached 工作區：優先跑 `git diff --staged` 或 `git diff --cached`。
+- 若專案有單元測試，**必須**再執行 `python .agent/skills/test-runner/scripts/test_runner.py [test_path]` 驗證。
+- 詳細說明請參閱 [`.agent/skills/INDEX.md`](../skills/INDEX.md)。
 
 ---
 
@@ -198,8 +223,8 @@ codex exec -c model="gpt-4o" "審查..."
 
 ### 📚 延伸資源
 
-- [完整工具使用指南](doc/TOOL_USAGE.md)
-- [CLI 工具探索 SOP](.agent/skills/explore_cli_tool.md)
+- [完整工具使用指南](../../doc/TOOL_USAGE.md)
+- [CLI 工具探索 SOP](../skills/explore-cli-tool/SKILL.md)
 
 ---
 
@@ -214,7 +239,7 @@ codex exec -c model="gpt-4o" "審查..."
 
 ⚠️ **禁止**：跳過 help 直接憑經驗臆測參數名稱
 
-詳細流程請參閱 [`.agent/skills/explore_cli_tool.md`](.agent/skills/explore_cli_tool.md)
+詳細流程請參閱 [`.agent/skills/explore-cli-tool/SKILL.md`](../skills/explore-cli-tool/SKILL.md)
 
 ---
 
@@ -225,7 +250,7 @@ codex exec -c model="gpt-4o" "審查..."
 **執行步驟**:
 
 ### 1. 標記 Plan 狀態
-在 `doc/Implementation_Plan_index.md` 中將 Plan 狀態標記為 `❌ FAIL`
+在 `doc/implementation_plan_index.md` 中將 Plan 狀態標記為 `❌ FAIL`
 
 ### 2. 分析 Git 歷史
 請求 Coordinator（Project terminal / VS Code SCM）提供最近 commits / diff 輸出，並根據輸出提出回滾建議：
@@ -303,11 +328,8 @@ git reset --soft abc123f
 
 **執行指令**:
 ```bash
-# workflow/治理任務：log 通常位於 .agent/logs/
-python .agent/skills/skills_evaluator.py .agent/logs/Idx-XXX_log.md
-
-# 專案功能任務：log 通常位於 doc/logs/
-python .agent/skills/skills_evaluator.py doc/logs/Idx-XXX_log.md
+# active workflow / 治理 / 專案功能任務：log 一律位於 doc/logs/
+python .agent/skills/skills-evaluator/scripts/skills_evaluator.py doc/logs/Idx-XXX_log.md
 ```
 
 **檢核項目**:
@@ -320,12 +342,12 @@ python .agent/skills/skills_evaluator.py doc/logs/Idx-XXX_log.md
 ```json
 {
   "status": "pass",
-   "log_path": ".agent/logs/Idx-012_log.md",
+    "log_path": "doc/logs/Idx-012_log.md",
   "statistics": {
     "total_executions": 6,
     "success_rate": 100.0,
     "status_distribution": {"pass": 6},
-    "skill_counts": {"code_reviewer.py": 3, "plan_validator.py": 1},
+   "skill_counts": {"code_reviewer": 3, "plan_validator": 1},
     "failed_skills": [],
     "summary": "6 次執行，成功率 100.0%"
   },
@@ -335,7 +357,7 @@ python .agent/skills/skills_evaluator.py doc/logs/Idx-XXX_log.md
 
 **Markdown 格式** (可選):
 ```bash
-python .agent/skills/skills_evaluator.py doc/logs/Idx-XXX_log.md --format markdown
+python .agent/skills/skills-evaluator/scripts/skills_evaluator.py doc/logs/Idx-XXX_log.md --format markdown
 ```
 
 ---

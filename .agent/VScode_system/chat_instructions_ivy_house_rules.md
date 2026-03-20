@@ -23,7 +23,15 @@ Ivy House 共通指令（所有 Agent 必遵守）
 - **Coordinator** 不做實作
 - 程式碼變更只允許透過：
   - `codex-cli`
-  - `opencode`
+  - `copilot-cli`
+
+---
+
+## 3.5️⃣ Terminal Runtime
+
+- workflow 的主要 terminal 工具一律視為 `.agent/runtime/tools/vscode_terminal_pty`
+- prompt / submit / monitor / verify 以 PTY runtime 為主證據
+- 只有 PTY 不可用且 user 明確同意後，才可改走 `.agent/runtime/tools/vscode_terminal_fallback`
 
 ---
 
@@ -34,7 +42,7 @@ Ivy House 共通指令（所有 Agent 必遵守）
 - VS Code SCM
 
 **禁止**：
-- 注入到 Codex/OpenCode terminal
+- 注入到 Codex/Copilot terminal
 - 在 Codex CLI 中執行 git 指令
 
 ---

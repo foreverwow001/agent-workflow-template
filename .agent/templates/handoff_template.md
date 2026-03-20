@@ -41,7 +41,7 @@
 |---------|------|
 | **Plan** | `doc/plans/Idx-___plan.md` |
 | **Log（預期）** | `doc/logs/Idx-___log.md` |
-| **主要程式碼** | `scripts/...` |
+| **主要程式碼** | `.agent/runtime/scripts/...` 或其他實際主程式路徑 |
 | **測試檔案** | `tests/...` |
 
 ---

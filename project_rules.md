@@ -1,8 +1,9 @@
 # [專案名稱] - 系統開發核心守則
 
 > ⚠️ **請將此檔案客製化為你的專案規則**
-> 
-> 此檔案是 AGENT_ENTRY.md 的必讀檔案之一，所有 Agent 都必須遵守這些規則。
+>
+> 此檔案是 **下游/新專案** 的 starter template 與 active rule source。
+> 若你正在維護 `agent-workflow-template` 這個 template repo 本身，請改讀 `./.agent/workflow_baseline_rules.md`；不要把本檔當成 template repo 的 active authoritative 規則來源。
 
 ---
 
@@ -68,7 +69,7 @@
 |---------|---------|---------|
 | **主程式** (app.py, main.py) | ≤ 600 行 | 800 行 |
 | **UI 模組** (ui/*.py) | ≤ 500 行 | 600 行 |
-| **業務邏輯** (core/*.py, scripts/*.py) | ≤ 400 行 | 500 行 |
+| **業務邏輯** (core/*.py, .agent/runtime/scripts/*.py) | ≤ 400 行 | 500 行 |
 | **工具模組** (utils/*.py) | ≤ 300 行 | 400 行 |
 | **測試檔案** (tests/*.py) | ≤ 500 行 | 1000 行 |
 
@@ -76,7 +77,7 @@
 
 - **檔案註釋：** 每個檔案第一行必須說明該檔案用途、職責
 - **模組化路由：** 程式碼須按功能拆分（如 `/modules/parsers/`, `/modules/core/`）
-- **命名規範：** 
+- **命名規範：**
   - Python: `snake_case`
   - JavaScript: `camelCase`
   - 類別: `PascalCase`
