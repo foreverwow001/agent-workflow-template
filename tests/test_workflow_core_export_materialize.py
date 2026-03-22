@@ -42,6 +42,7 @@ def write_runtime_scripts(repo_root: Path) -> None:
         "workflow_core_manifest.py",
         "workflow_core_contracts.py",
         "workflow_core_export_materialize.py",
+        "workflow_core_obsidian_restricted_mount.py",
     ]:
         (target_dir / filename).write_text((SCRIPTS_DIR / filename).read_text(encoding="utf-8"), encoding="utf-8")
 
@@ -169,6 +170,7 @@ class WorkflowCoreExportMaterializeTest(unittest.TestCase):
             metadata = json.loads((output_dir / "workflow-core-export-curated-core-v1.json").read_text(encoding="utf-8"))
             self.assertEqual(result["status"], "pass")
             self.assertTrue((output_dir / ".agent" / "workflows" / "dev-team.md").exists())
+            self.assertTrue((output_dir / ".agent" / "runtime" / "scripts" / "workflow_core_obsidian_restricted_mount.py").exists())
             self.assertTrue((output_dir / ".agent" / "skills" / "code-reviewer" / "SKILL.md").exists())
             self.assertTrue((output_dir / ".agent" / "skills" / "refactor" / "SKILL.md").exists())
             self.assertFalse((output_dir / ".agent" / "skills" / "github-explorer" / "SKILL.md").exists())

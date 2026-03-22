@@ -131,6 +131,7 @@
   - **Coordinator Research Skill Trigger Checklist（authoritative）**：見 [coordinator_research_skill_trigger_checklist.md](./references/coordinator_research_skill_trigger_checklist.md)
   - Coordinator 必須逐列檢查；任一列命中即載入對應 skill；若同時命中多列，必須全部載入
 - **Obsidian Knowledge Intake Gate（downstream / 新專案工作區條件式）**：若目前在 downstream / 新專案工作區執行 workflow，且工作區已配置 Obsidian access surface，Coordinator 在注入 Engineer / Security Reviewer / QA 前必須先完成受控知識檢閱。
+  - downstream 若採用 core-shipped restricted mount generator，推薦的 repo-local access surface 為 `obsidian-knowledge/00-indexes/` 與 `obsidian-knowledge/20-reviewed/`
   - 啟動順序固定為：先檢閱 `00-indexes/`，再依索引只讀取最小必要的 `20-reviewed/` 文件
   - 啟動階段允許讀取的 Obsidian surface 只有：`00-indexes/` 與經索引選出的 `20-reviewed/` 文件
   - 啟動階段禁止讀寫：`10-inbox/reviewed-sync-candidates/`、`30-archives/`、私人草稿區與其他未列入 allow-list 的 vault 路徑

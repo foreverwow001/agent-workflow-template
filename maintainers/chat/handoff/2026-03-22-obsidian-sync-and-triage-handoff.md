@@ -186,9 +186,9 @@ main
 - 公司端 VS Code 目前已無 dirty state / Source Control 異常；先前那批混合 staged/unstaged 狀態已確認是本地 index/worktree 問題，且已收斂
 - 功能批次已完成提交並位於 `origin/main`：`0f9bef3 feat: add obsidian triage and reviewed sync tooling`
 - dirty state / index 問題已完成診斷與收斂，結論已寫入本 handoff
-- handoff 補充本身已再新增 2 個本地 docs commit：`62dab22`、`1ce95e1`
-- 截至 `1ce95e1` 為止，本地 `main` 工作樹已收斂為乾淨；若後續繼續補寫這份 handoff，repo 顯示的差異應只會來自這份 handoff 本身
-- 目前 branch 相對 `origin/main` 仍為 ahead 2，表示這兩個 docs commit 尚未 push
+- 這份 handoff 後續補充與 Obsidian Explorer follow-up 已再提交並推上 `main`：`9d0740f docs: refresh obsidian sync handoff final state`、`3f94286 feat: auto-link obsidian vault in devcontainer`、`2f3cd5d docs: add obsidian vault mount handoff note`
+- template repo 的 maintainer-local single-root Explorer exposure 已正式產品化：`post_create.sh` 會在 mount 存在時自動建立 `obsidian-vault -> /obsidian/vault`
+- 目前本地 `main` 與 `origin/main` 已再次對齊；handoff 中先前提到的 ahead 2 狀態已成歷史
 
 ## Obsidian vault mount verification at company
 
@@ -213,6 +213,7 @@ main
 - 為了讓目前這個 repo workspace 的左側 Explorer 直接看得到 vault，已在 repo root 建立本機 symlink：`obsidian-vault -> /obsidian/vault`
 - 這個 symlink 只用來暴露已掛載的 vault 給目前 Explorer 使用，不是正式 workflow 契約，也不是要提交的 repo 內容
 - 該 symlink 已加入本機 `.git/info/exclude`，避免污染 git status
+- 後續已由 `3f94286 feat: auto-link obsidian vault in devcontainer` 把這個 single-root Explorer exposure 正式落成 `post_create.sh` 自動化；目前不再依賴每台機器手動建立 symlink
 
 ### 後續真正要處理的事
 
@@ -327,7 +328,12 @@ main
 - `62dab22 docs: update obsidian sync handoff follow-up`
 - `1ce95e1 docs: finalize obsidian sync handoff resolution`
 
-目前這兩個 docs commit 都仍是本地提交；因此截至這份 handoff 的最終版狀態，本地 `main` 工作樹已乾淨，但相對 `origin/main` 為 ahead 2。
+後續又補了兩個與 handoff / vault visibility 直接相關的 commit，且目前都已在 `origin/main`：
+
+- `9d0740f docs: refresh obsidian sync handoff final state`
+- `2f3cd5d docs: add obsidian vault mount handoff note`
+
+另外，`3f94286 feat: auto-link obsidian vault in devcontainer` 已把 template repo 的 single-root Explorer exposure 正式產品化；因此目前已不再存在「本地 docs commit 尚未 push、branch ahead 2」這個狀態。
 
 ## What was rejected or intentionally constrained
 
@@ -340,9 +346,9 @@ main
 
 若到公司後要延續這條線，建議優先順序如下：
 
-1. 先決定要不要把目前本地的 2 個 handoff docs commit（`62dab22`、`1ce95e1`）push 到 `origin/main`
-2. 再決定 downstream 專用 Obsidian mount 方案要不要落成更正式的 Dev Container / generator contract
-3. 若要讓 downstream bootstrap automation 支援 Obsidian access，優先做 restricted partial-vault profile，而不是 export full-vault config
+1. 直接做 downstream 專用 Obsidian restricted mount contract / generator，避免 downstream repo 誤沿用 template repo 的 full-vault maintainer profile
+2. 若要讓 downstream bootstrap automation 支援 Obsidian access，優先做 restricted partial-vault profile，而不是 export full-vault config
+3. 把 downstream 的 Obsidian access surface 固定成 single-root repo-local shape，再由 gate / docs / generator 一起收斂
 4. 視需要再補更正式的 regression：
    - downstream restricted mount contract
    - pending-review-recorder CLI payload edge cases
@@ -350,7 +356,7 @@ main
 
 ## Next exact prompt
 
-請先讀 `maintainers/chat/handoff/2026-03-22-obsidian-sync-and-triage-handoff.md`，特別是 `Resolution at company` 與 `Current stage`。先注意目前本地 `main` 相對 `origin/main` 仍有兩個尚未 push 的 docs commit：`62dab22` 與 `1ce95e1`。若你要讓 handoff 與遠端同步，先決定是否 push 這兩個 docs commit；之後就不要再花時間重追這次 dirty tree，而是直接延續未完成的產品化工作：優先做 downstream restricted Obsidian mount contract / generator 設計，或補 recorder / reviewed-sync / intake gate 的 regression coverage。若未來再次看到類似 staged 刪除加 unstaged 回填的混合狀態，先用 `git add -A` 重新收斂目前 worktree，再判斷真實 diff 面。
+請先讀 `maintainers/chat/handoff/2026-03-22-obsidian-sync-and-triage-handoff.md`，特別是 `Resolution at company`、`Current stage` 與 `Immediate next work after this commit`。目前 handoff follow-up、vault visibility 補充與 single-root Explorer exposure 都已在 `origin/main`；因此不要再花時間處理舊的 ahead 2 歷史狀態，而是直接延續未完成的產品化工作：優先把 downstream restricted Obsidian mount contract / generator 落成正式交付物，並補對應 regression coverage。若未來再次看到 staged 刪除加 unstaged 回填的混合狀態，先用 `git add -A` 重新收斂目前 worktree，再判斷真實 diff 面。
 
 ## Risks
 
@@ -372,4 +378,7 @@ main
 - 已驗證：重新執行 `git add -A` 後，混合的 staged deletion / unstaged 回填已收斂，只剩 handoff follow-up 本身是真實差異。
 - 已完成：handoff follow-up 已提交為 `62dab22 docs: update obsidian sync handoff follow-up`。
 - 已完成：handoff 最終收斂版已提交為 `1ce95e1 docs: finalize obsidian sync handoff resolution`。
-- 目前狀態：公司端 VS Code 已無 dirty-state 異常；截至 `1ce95e1` 時本地 `main` 工作樹乾淨，若尚未 push 則相對 `origin/main` ahead 2；後續若再看到 repo 差異，應先區分是不是這份 handoff 自身的新補寫。
+- 已完成：handoff 遠端狀態已再刷新為 `9d0740f docs: refresh obsidian sync handoff final state`。
+- 已完成：template repo 的 single-root Explorer exposure 已提交為 `3f94286 feat: auto-link obsidian vault in devcontainer`，且 focused bootstrap regression 通過。
+- 已完成：vault visibility 補充已提交為 `2f3cd5d docs: add obsidian vault mount handoff note`。
+- 目前狀態：本地 `main` 與 `origin/main` 已對齊；後續若再看到 repo 差異，應先區分是不是這份 handoff 自身的新補寫，或是新的 downstream restricted mount 產品化工作。
