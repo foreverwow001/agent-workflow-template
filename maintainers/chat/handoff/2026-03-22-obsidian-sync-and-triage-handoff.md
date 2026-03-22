@@ -184,6 +184,72 @@ main
   2. 將目前 Obsidian / triage / reviewed-sync / gate 變更 commit
   3. push 到 `origin/main`
 
+## Follow-up issue discovered after this handoff draft
+
+在這份 handoff 草稿完成後，後續實際已經把當時那批 Obsidian / triage / reviewed-sync / gate 變更提交並 push 到 `main`：
+
+- commit: `0f9bef3 feat: add obsidian triage and reviewed sync tooling`
+- 已確認當時本地 `HEAD` 與 `origin/main` 一致
+
+但之後在公司電腦重新 rebuild Dev Container 並重新打開 workspace 時，又出現「看起來還有很多尚未 commit 的檔案」的異常狀態。
+
+### 異常現象
+
+- git dirty state 是真的，不是單純 VS Code UI 沒刷新
+- 當時觀察到 local `HEAD` 與 `origin/main` 都是 `0f9bef3`
+- 但 working tree 同時出現 staged 與 unstaged 兩層變更
+- 狀態型態包含：`MM`、staged `D`、以及對應檔案重新以 `??` 或 unstaged modified 形式出現
+
+### Dirty state 結構
+
+當時拆開看，髒狀態不是單一層，而是兩層混在一起：
+
+1. staged changes
+   - 幾乎是在把剛剛 commit 的 Obsidian / pending-review / reviewed-sync 相關檔案整批移除
+   - 規模大約是 29 個檔案、約 4013 deletions、4 insertions
+2. unstaged changes
+   - 又把其中一部分內容重新加回來或局部修改
+   - 規模大約是 16 個檔案、114 insertions、4 deletions
+
+這代表問題比較像「本地 index / worktree 疊出異常狀態」，不是單純又新增了一批正常開發中的修改。
+
+### 已做過的排查
+
+已檢查以下 rebuild 路徑：
+
+- `.agent/runtime/scripts/devcontainer/post_create.sh`
+- `.devcontainer/devcontainer.json`
+- `.devcontainer/devcontainer.ghcr.json`
+
+目前確認：
+
+- 這些 devcontainer rebuild / post-create 路徑本身沒有 `git add`、`git reset`、`git restore`、`git checkout`、`git clean`、`git stash`、`git commit` 之類會直接改 git 狀態的命令
+- 因此「單純 rebuild 本身直接把 repo 改髒」這個假說，目前沒有直接證據支持
+
+但另外有找到 repo 內其他 script 含 git 清理邏輯：
+
+- `.agent/scripts/run_codex_template.sh`
+  - `git reset --hard "$PRE_HEAD" 2>/dev/null || true`
+  - `git restore --worktree --staged -- . 2>/dev/null || true`
+
+這不代表它就是本次直接根因，但若公司端有跑到這條腳本，必須列入排查。
+
+### 目前最合理判斷
+
+- 比較像是公司電腦上的 workspace / index 原本就殘留過一份 dirty state
+- rebuild 之後只是重新掛載或重新看見那份本地狀態
+- 目前沒有證據顯示 devcontainer 的標準 rebuild 流程本身會直接產生這批 git 變更
+
+### 公司端接手時的第一優先工作
+
+到公司後，不要直接在這個 dirty tree 上繼續做功能延伸。先做以下診斷：
+
+1. 再次確認 `git status --short --branch` 與 `git rev-parse --short HEAD && git rev-parse --short origin/main`
+2. 分開看 `git diff --cached --stat` 與 `git diff --stat`
+3. 判斷這批 staged 刪除 / unstaged 回填是否有任何內容其實要保留
+4. 搜尋是否真的有流程會執行 `.agent/scripts/run_codex_template.sh` 或其他會改 index/worktree 的 wrapper
+5. 若確認這批變更都不是要保留的工作成果，再決定是否清理回 `origin/main`
+
 ## What was rejected or intentionally constrained
 
 - 不把 `reviewed-sync-manager` 匯出給 downstream repo；它維持 workflow-template-only maintainer tool。
@@ -204,7 +270,7 @@ main
 
 ## Next exact prompt
 
-請先讀 `maintainers/chat/handoff/2026-03-22-obsidian-sync-and-triage-handoff.md`，再確認 `maintainers/chat/2026-03-20-project-maintainers-obsidian-sync-policy.md`、`maintainers/chat/2026-03-20-obsidian-reviewed-sync-checklist.md`、`maintainers/chat/2026-03-20-obsidian-vault-structure-and-frontmatter.md`、`.agent/skills/pending-review-recorder/`、`.agent/skills/reviewed-sync-manager/`、`.agent/workflows/AGENT_ENTRY.md` 與 `tests/test_pending_review_recorder_skill.py`、`tests/test_reviewed_sync_manager_skill.py`、`tests/test_dev_entry_workflow_contract.py`。若下一步要延伸工作，優先做 downstream restricted Obsidian mount contract / generator 設計，或補這批 recorder / reviewed-sync / intake gate 的 regression coverage。
+請先讀 `maintainers/chat/handoff/2026-03-22-obsidian-sync-and-triage-handoff.md`，特別是 `Follow-up issue discovered after this handoff draft` 這一節。先不要直接延伸功能，先確認目前公司端 workspace 的 git dirty state：檢查 `git status --short --branch`、`git rev-parse --short HEAD`、`git rev-parse --short origin/main`、`git diff --cached --stat`、`git diff --stat`，判斷 staged 刪除與 unstaged 回填是不是殘留的本地 index/worktree 狀態。再檢查 `.agent/runtime/scripts/devcontainer/post_create.sh`、`.devcontainer/devcontainer.json`、`.devcontainer/devcontainer.ghcr.json` 與 `.agent/scripts/run_codex_template.sh`，確認到底是哪條路徑可能影響 git 狀態。若 dirty state 釐清或清理完成，再回來做 downstream restricted Obsidian mount contract / generator 設計，或補 recorder / reviewed-sync / intake gate 的 regression coverage。
 
 ## Risks
 
@@ -213,6 +279,8 @@ main
 - downstream restricted mount 的設計方向已清楚，但尚未實作成正式 bootstrap / generator contract。
 - `pending-review-recorder` 雖已有 focused tests，但若未來擴大自動寫入事件類型，仍需防止 note 爆量與 dedupe 漂移。
 - 目前 workflow 契約已限制 downstream 啟動讀取面；若後續 docs / role prompts 再變更，需維持 `AGENT_ENTRY.md`、`dev-team.md`、`coordinator.md` 與 contract test 同步。
+- 公司電腦目前觀察到的 dirty state 可能讓人誤以為上一輪 commit / push 沒成功；實際上曾經確認過 `HEAD` 與 `origin/main` 都在 `0f9bef3`，所以要先區分「已推上遠端的歷史」與「本地 index/worktree 異常」。
+- 若沒先拆清 staged 刪除與 unstaged 回填來源，就直接在公司端繼續修改或 commit，容易把不該存在的本地殘留狀態一起帶進新提交。
 
 ## Verification status
 
@@ -220,3 +288,5 @@ main
 - 已驗證：目前未提交的 Obsidian / triage / reviewed-sync / gate 變更 focused tests 通過，結果為 `14 tests OK`。
 - 已驗證：目前關鍵新 script 與測試檔無 editor diagnostics。
 - 尚未完成：把目前這批未提交檔案正式 commit 並 push。
+- 後續另已驗證過一次：Obsidian / triage / reviewed-sync 那批變更曾成功 commit / push 為 `0f9bef3 feat: add obsidian triage and reviewed sync tooling`，而且當時本地 `HEAD` 與 `origin/main` 相同。
+- 後續另已驗證過一次：devcontainer rebuild 路徑本身沒有直接修改 git state 的命令；dirty tree 較像是公司端本地 workspace / index 殘留狀態重新浮現。
