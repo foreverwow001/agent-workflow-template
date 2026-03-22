@@ -155,6 +155,8 @@ ObsidianVault/
 
 目標是讓 agent 能直接讀必要知識，但不因為方便而取得整個 vault 的預設讀寫權限。
 
+這裡列出的 `default no-mount` 是 downstream restricted baseline；`reviewed-sync-candidates/` 的實際寫入與 promotion flow，僅屬於後述 workflow template repo / full curator profile 的 candidate lane。
+
 ### 4.1 Downstream Project Repo Profile
 
 對一般開發專案 repo，建議把 Obsidian access 壓到最小，預設只提供「讀正式知識、寫待審區」這種受限模式。
