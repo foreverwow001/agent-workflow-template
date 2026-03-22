@@ -188,7 +188,9 @@ main
 - dirty state / index 問題已完成診斷與收斂，結論已寫入本 handoff
 - 這份 handoff 後續補充與 Obsidian Explorer follow-up 已再提交並推上 `main`：`9d0740f docs: refresh obsidian sync handoff final state`、`3f94286 feat: auto-link obsidian vault in devcontainer`、`2f3cd5d docs: add obsidian vault mount handoff note`
 - template repo 的 maintainer-local single-root Explorer exposure 已正式產品化：`post_create.sh` 會在 mount 存在時自動建立 `obsidian-vault -> /obsidian/vault`
-- 目前本地 `main` 與 `origin/main` 已再次對齊；handoff 中先前提到的 ahead 2 狀態已成歷史
+- downstream restricted mount generator 與 opt-in bootstrap / sync apply integration 之後，active docs 已再往前收斂成 operator-facing alias 與 one-click wrapper command：`workflow_core_sync_update.py`
+- 另外又補了 focused regression：`pending-review-recorder` payload edge cases、`reviewed-sync-manager` promotion / archive edge cases
+- 目前 git history 仍與 `origin/main` 對齊，但本地 worktree 另有一批尚未提交的 follow-up：one-click wrapper、active docs 收斂與新 regression coverage
 
 ## Obsidian vault mount verification at company
 
@@ -346,23 +348,23 @@ main
 
 若到公司後要延續這條線，建議優先順序如下：
 
-1. 若要讓 downstream 操作面更一致，優先在 active docs / SOP / onboarding 範例統一使用 `--setup-obsidian-restricted-access`，不要同時教兩套旗標名稱
-2. 若未來還要再往上收斂 operator surface，應做更高層 wrapper command，而不是回頭把 `.devcontainer/**` 變成 export-managed surface
+1. 把目前本地未提交的 one-click wrapper / active docs / regression follow-up 收斂成 commit，避免 handoff 再次落後真實狀態
+2. 若要繼續改善可攜性，優先把 template repo 的 full-vault mount host path 改成環境變數或本機 override，而不是硬編碼 maintainer-local 路徑
 3. 持續維持 downstream 的 Obsidian access surface 為 single-root repo-local shape，避免任何文件或新工具把使用者帶回 full-vault / multi-root 心智模型
 4. 視需要再補更正式的 regression：
-   - downstream restricted mount contract
-   - pending-review-recorder CLI payload edge cases
-   - reviewed-sync-manager promotion / archive edge cases
+  - one-click wrapper CLI failure-path coverage
+  - pending-review-recorder 更大規模 dedupe / merge 邊界
+  - reviewed-sync-manager 多 index target / merge body 漂移情境
 
 ## Next exact prompt
 
-請先讀 `maintainers/chat/handoff/2026-03-22-obsidian-sync-and-triage-handoff.md`，特別是 `Resolution at company`、`Current stage` 與 `Immediate next work after this commit`。目前 handoff follow-up、vault visibility 補充、single-root Explorer exposure、downstream restricted mount generator，以及 opt-in bootstrap / sync apply integration 都已在 `origin/main`；因此不要再回頭處理舊的 ahead 2 歷史狀態，也不要再把 `.devcontainer/**` 當成 export-managed surface。若要延續這條線，優先做 active docs / onboarding 的操作面收斂，統一使用 `--setup-obsidian-restricted-access` 當作 operator-facing 入口。若未來再次看到 staged 刪除加 unstaged 回填的混合狀態，先用 `git add -A` 重新收斂目前 worktree，再判斷真實 diff 面。
+請先讀 `maintainers/chat/handoff/2026-03-22-obsidian-sync-and-triage-handoff.md`，特別是 `Current stage` 與 `Immediate next work after this commit`。目前 `origin/main` 已包含 handoff follow-up、vault visibility 補充、single-root Explorer exposure、downstream restricted mount generator，以及 opt-in bootstrap / sync apply integration；另外本地 worktree 還有尚未提交的後續收斂：`workflow_core_sync_update.py` one-click wrapper、active docs 改成單一 operator-facing 入口，以及 `pending-review-recorder` / `reviewed-sync-manager` 的 edge-case focused tests。若要延續這條線，優先判斷這批 follow-up 是否要直接 commit / push；若未來再次看到 staged 刪除加 unstaged 回填的混合狀態，先用 `git add -A` 重新收斂目前 worktree，再判斷真實 diff 面。
 
 ## Risks
 
 - `reviewed-sync-manager` 目前是 template-only tool，若未來要把某部分能力下放 downstream，必須先重新切清 writer / promotion 邊界，而不是直接 export 整包。
 - template repo 目前 full-vault mount 使用的是 maintainer-local 路徑假設；這不具 downstream 可攜性。
-- downstream restricted mount contract 與 opt-in bootstrap / sync apply integration 已落地；後續風險改為文件與 onboarding 操作面若不統一，容易讓使用者記成舊旗標名稱。
+- downstream restricted mount contract、operator-facing alias 與 one-click wrapper 都已成形；後續風險改為若 wrapper / alias / docs 之後不同步，容易再次分裂成多套入口名稱。
 - `pending-review-recorder` 雖已有 focused tests，但若未來擴大自動寫入事件類型，仍需防止 note 爆量與 dedupe 漂移。
 - 目前 workflow 契約已限制 downstream 啟動讀取面；若後續 docs / role prompts 再變更，需維持 `AGENT_ENTRY.md`、`dev-team.md`、`coordinator.md` 與 contract test 同步。
 - 公司端這次 dirty state 雖已排除，但它暴露出一個實務風險：若直接看見 staged 刪除與 unstaged 回填混在一起，就貿然修改或 commit，容易把假的 index 狀態誤判成新的功能變更。
@@ -381,4 +383,6 @@ main
 - 已完成：handoff 遠端狀態已再刷新為 `9d0740f docs: refresh obsidian sync handoff final state`。
 - 已完成：template repo 的 single-root Explorer exposure 已提交為 `3f94286 feat: auto-link obsidian vault in devcontainer`，且 focused bootstrap regression 通過。
 - 已完成：vault visibility 補充已提交為 `2f3cd5d docs: add obsidian vault mount handoff note`。
-- 目前狀態：本地 `main` 與 `origin/main` 已對齊；後續若再看到 repo 差異，應先區分是不是這份 handoff 自身的新補寫，或是新的 downstream restricted mount 產品化工作。
+- 已驗證：新增的 one-click wrapper command `workflow_core_sync_update.py` 已能以單一入口串接 `sync stage -> sync apply -> sync verify`，並可在預設 staging root rerun 時自動覆蓋舊的 generated staging tree。
+- 已驗證：新增 focused suite `pytest -q tests/test_workflow_core_wrapper_commands.py tests/test_workflow_core_export_materialize.py tests/test_pending_review_recorder_skill.py tests/test_reviewed_sync_manager_skill.py` 通過，結果為 `33 passed`。
+- 目前狀態：git history 仍與 `origin/main` 對齊，但 worktree 尚有未提交 follow-up；後續若再看到 repo 差異，應先區分是不是這批 wrapper / docs / regression 收斂，或是新的產品化工作。

@@ -184,6 +184,88 @@ class ReviewedSyncManagerSkillTest(unittest.TestCase):
         self.assertTrue(archived_exists)
         self.assertIn("30-archives/superseded", archived_parent)
 
+    def test_promote_candidate_merge_does_not_duplicate_existing_index_link(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            vault_root = build_vault(Path(temp_dir))
+            first_candidate = self.tool.write_candidate(
+                vault_root,
+                {
+                    "title": "obsidian workflow summary",
+                    "source_repo": "agent-workflow-template",
+                    "source_path": "maintainers/chat/2026-03-20-obsidian-vault-structure-and-frontmatter.md",
+                    "source_type": "maintainer-analysis",
+                    "summary_text": "第一版 reviewed summary。",
+                    "target_reviewed_dir": "agent-workflow-template/workflow-knowledge",
+                    "index_targets": ["workflows.md"],
+                },
+            )
+            first_promote = self.tool.promote_candidate(vault_root, Path(first_candidate["target_note"]))
+
+            second_candidate = self.tool.write_candidate(
+                vault_root,
+                {
+                    "title": "obsidian workflow summary",
+                    "source_repo": "agent-workflow-template",
+                    "source_path": "maintainers/chat/2026-03-20-obsidian-vault-structure-and-frontmatter.md",
+                    "source_type": "maintainer-analysis",
+                    "summary_text": "第二版 reviewed summary。",
+                    "target_reviewed_dir": "agent-workflow-template/workflow-knowledge",
+                    "index_targets": ["workflows.md"],
+                },
+            )
+            second_promote = self.tool.promote_candidate(vault_root, Path(second_candidate["target_note"]))
+
+            target_note = Path(first_promote["target_note"])
+            wiki_link = f"[[{target_note.relative_to(vault_root).with_suffix('').as_posix()}|obsidian workflow summary]]"
+            workflows_index = (vault_root / "00-indexes" / "workflows.md").read_text(encoding="utf-8")
+
+        self.assertEqual(second_promote["action"], "merge")
+        self.assertEqual(second_promote["updated_indexes"], [])
+        self.assertEqual(workflows_index.count(wiki_link), 1)
+
+    def test_promote_candidate_archives_with_suffix_when_archive_name_collides(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            vault_root = build_vault(Path(temp_dir))
+            first_candidate = self.tool.write_candidate(
+                vault_root,
+                {
+                    "title": "archive collision summary",
+                    "source_repo": "agent-workflow-template",
+                    "source_path": "maintainers/chat/2026-03-20-project-maintainers-obsidian-sync-policy.md",
+                    "source_type": "maintainer-policy",
+                    "summary_text": "第一版 reviewed summary。",
+                    "target_reviewed_dir": "agent-workflow-template/workflow-knowledge",
+                },
+            )
+            self.tool.promote_candidate(vault_root, Path(first_candidate["target_note"]))
+
+            second_candidate = self.tool.write_candidate(
+                vault_root,
+                {
+                    "title": "archive collision summary",
+                    "source_repo": "agent-workflow-template",
+                    "source_path": "maintainers/chat/2026-03-20-project-maintainers-obsidian-sync-policy.md",
+                    "source_type": "maintainer-policy",
+                    "summary_text": "第二版 reviewed summary。",
+                    "target_reviewed_dir": "agent-workflow-template/workflow-knowledge",
+                },
+            )
+            second_candidate_path = Path(second_candidate["target_note"])
+            archive_dir = vault_root / "30-archives" / "superseded"
+            archive_dir.mkdir(parents=True, exist_ok=True)
+            collision_path = archive_dir / second_candidate_path.name
+            collision_path.write_text("existing archive\n", encoding="utf-8")
+
+            second_promote = self.tool.promote_candidate(vault_root, second_candidate_path)
+            archived_path = Path(second_promote["archived_candidate"])
+            archived_exists = archived_path.exists()
+            archived_name = archived_path.name
+
+        self.assertEqual(second_promote["action"], "merge")
+        self.assertTrue(archived_exists)
+        self.assertNotEqual(archived_name, second_candidate_path.name)
+        self.assertTrue(archived_name.startswith(second_candidate_path.stem + "-"))
+
     def test_tool_rejects_non_template_repo(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             vault_root = build_vault(Path(temp_dir))

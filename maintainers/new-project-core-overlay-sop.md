@@ -286,6 +286,18 @@ python .agent/runtime/scripts/workflow_core_sync_verify.py \
   --staging-root .workflow-core/staging/core-v20260320-2
 ```
 
+若想把 downstream 日常更新收斂成真正只記一個入口，現在建議直接改用：
+
+```bash
+python .agent/runtime/scripts/workflow_core_sync_update.py \
+  --repo-root . \
+  --release-ref core-v20260320-2 \
+  --source-remote workflow-core-upstream \
+  --setup-obsidian-restricted-access
+```
+
+這個 wrapper 會自動串 `sync stage -> sync apply -> sync verify`，並在使用預設 staging root 時覆蓋上一輪 generated staging tree。
+
 若這個 downstream repo 需要 Dev Container 內的受控 Obsidian 讀取面，請優先用新的高層 alias，而不是直接記低階 generator / sample 旗標：
 
 ```bash

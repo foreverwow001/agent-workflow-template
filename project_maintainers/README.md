@@ -24,13 +24,25 @@
 
 若 downstream / 新專案需要在 Dev Container 中受控讀取 Obsidian，推薦使用 restricted consumer profile，而不是直接掛 full vault。
 
+若 downstream 只想記一個同步入口，現在優先使用：
+
+```bash
+python .agent/runtime/scripts/workflow_core_sync_update.py \
+	--repo-root . \
+	--release-ref <release-ref> \
+	--source-remote workflow-core-upstream \
+	--setup-obsidian-restricted-access
+```
+
+這個 wrapper 會依序處理 `sync stage -> sync apply -> sync verify`，並在使用預設 staging root 時自動覆蓋舊的 generated staging tree，避免每次手動清理 `.workflow-core/staging/<release-ref>/`。
+
 目前 core 已內建 generator artifact，可在 downstream repo 執行：
 
 ```bash
 python .agent/runtime/scripts/workflow_core_obsidian_restricted_mount.py --repo-root .
 ```
 
-若你想在第一次 bootstrap 或後續 sync apply 時半自動產出 sample，也可改用 opt-in 旗標：
+若你只需要單獨產生 Obsidian restricted access sample，而不是跑完整個 one-click sync lane，也可改用以下入口：
 
 ```bash
 python .agent/runtime/scripts/workflow_core_projection.py --repo-root . --bootstrap-overlay-index --setup-obsidian-restricted-access

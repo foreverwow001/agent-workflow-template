@@ -54,6 +54,7 @@ def write_runtime_scripts(repo_root: Path) -> None:
         "workflow_core_release_create.py",
         "workflow_core_release_publish_notes.py",
         "workflow_core_sync_stage.py",
+        "workflow_core_sync_update.py",
         "workflow_core_sync_precheck.py",
         "workflow_core_sync_apply.py",
         "workflow_core_sync_verify.py",
@@ -115,6 +116,7 @@ class WorkflowCoreWrapperCommandsTest(unittest.TestCase):
         cls.release_create = load_module("test_workflow_core_release_create", SCRIPTS_DIR / "workflow_core_release_create.py")
         cls.release_publish = load_module("test_workflow_core_release_publish_notes", SCRIPTS_DIR / "workflow_core_release_publish_notes.py")
         cls.sync_stage = load_module("test_workflow_core_sync_stage", SCRIPTS_DIR / "workflow_core_sync_stage.py")
+        cls.sync_update = load_module("test_workflow_core_sync_update", SCRIPTS_DIR / "workflow_core_sync_update.py")
         cls.sync_apply = load_module("test_workflow_core_sync_apply", SCRIPTS_DIR / "workflow_core_sync_apply.py")
         cls.sync_verify = load_module("test_workflow_core_sync_verify", SCRIPTS_DIR / "workflow_core_sync_verify.py")
 
@@ -439,6 +441,87 @@ class WorkflowCoreWrapperCommandsTest(unittest.TestCase):
         self.assertEqual(apply_result["status"], "pass")
         self.assertEqual(verify_result["status"], "pass")
         self.assertEqual(restored, "remote staged workflow\n")
+
+    def test_sync_update_runs_stage_apply_verify_with_single_command(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            upstream_root = root / "upstream"
+            downstream_root = root / "downstream"
+
+            init_git_repo(upstream_root)
+            write_manifest(upstream_root)
+            write_runtime_scripts(upstream_root)
+            create_required_live_paths(upstream_root, include_index=True)
+            (upstream_root / ".agent" / "workflows" / "example.md").write_text("remote one-click workflow\n", encoding="utf-8")
+            baseline_commit = commit_all(upstream_root, "seed upstream one-click release")
+            subprocess.run(["git", "-C", str(upstream_root), "tag", "core-v20260322-one-click", baseline_commit], check=True)
+
+            init_git_repo(downstream_root)
+            write_manifest(downstream_root)
+            write_runtime_scripts(downstream_root)
+            create_required_live_paths(downstream_root, include_index=False)
+            commit_all(downstream_root, "seed downstream one-click baseline")
+            subprocess.run(["git", "-C", str(downstream_root), "remote", "add", "workflow-core-upstream", str(upstream_root)], check=True)
+
+            first_completed = subprocess.run(
+                [
+                    sys.executable,
+                    str(SCRIPTS_DIR / "workflow_core_sync_update.py"),
+                    "--repo-root",
+                    str(downstream_root),
+                    "--manifest",
+                    str(downstream_root / "core_ownership_manifest.yml"),
+                    "--release-ref",
+                    "core-v20260322-one-click",
+                    "--source-remote",
+                    "workflow-core-upstream",
+                    "--setup-obsidian-restricted-access",
+                    "--json",
+                ],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            first_result = json.loads(first_completed.stdout)
+            first_stage_root = Path(first_result["staging_root"])
+            (first_stage_root / "stale.txt").write_text("stale\n", encoding="utf-8")
+            commit_all(downstream_root, "record one-click sync result")
+
+            second_completed = subprocess.run(
+                [
+                    sys.executable,
+                    str(SCRIPTS_DIR / "workflow_core_sync_update.py"),
+                    "--repo-root",
+                    str(downstream_root),
+                    "--manifest",
+                    str(downstream_root / "core_ownership_manifest.yml"),
+                    "--release-ref",
+                    "core-v20260322-one-click",
+                    "--source-remote",
+                    "workflow-core-upstream",
+                    "--setup-obsidian-restricted-access",
+                    "--json",
+                ],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            second_result = json.loads(second_completed.stdout)
+
+            restored = (downstream_root / ".agent" / "workflows" / "example.md").read_text(encoding="utf-8")
+            snippet_exists = (downstream_root / ".devcontainer" / "devcontainer.obsidian-restricted.jsonc").exists()
+            stale_exists = (Path(second_result["staging_root"]) / "stale.txt").exists()
+
+        self.assertEqual(first_result["status"], "pass")
+        self.assertEqual(second_result["status"], "pass")
+        self.assertEqual(second_result["stage_result"]["status"], "pass")
+        self.assertEqual(second_result["apply_result"]["status"], "pass")
+        self.assertEqual(second_result["verify_result"]["status"], "pass")
+        self.assertTrue(second_result["replaced_existing_staging_root"])
+        self.assertTrue(second_result["obsidian_mount_sample_generated"])
+        self.assertEqual(restored, "remote one-click workflow\n")
+        self.assertTrue(snippet_exists)
+        self.assertFalse(stale_exists)
 
     def test_sync_verify_passes_with_manifest_backed_checks(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

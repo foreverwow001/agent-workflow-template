@@ -177,6 +177,26 @@
 
 若 staging root 位於 repo 內，`sync precheck` 會因 `.workflow-core/staging/**` 出現在 working tree 而回 `warn`。這是預期行為，不代表 core managed path 已經有 local divergence。
 
+### 建議的 one-click downstream lane
+
+若 downstream 使用者只想記一個入口，現在建議直接使用：
+
+```bash
+/path/to/python .agent/runtime/scripts/workflow_core_sync_update.py \
+  --repo-root . \
+  --release-ref core-v20260320-1 \
+  --source-remote workflow-core-upstream \
+  --setup-obsidian-restricted-access
+```
+
+這個 wrapper 會串接：
+
+1. `workflow_core_sync_stage.py`
+2. `workflow_core_sync_apply.py`
+3. `workflow_core_sync_verify.py`
+
+並在使用預設 staging root 時自動覆蓋舊的 generated staging tree。以下 Step 3 / Step 4 保留作為低階拆解與故障排查參考。
+
 ### Step 3. 套用 staged export tree
 
 ```bash
