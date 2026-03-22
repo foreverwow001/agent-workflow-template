@@ -5,9 +5,9 @@
 自 `maintainers/chat/handoff/2026-03-20-scheme-a-implementation-handoff.md` 之後，到目前為止有兩段工作已經明確分開：
 
 1. 上一份 handoff 當時尚未完成的 bootstrap / dependency hardening，後續已完成 commit、測試並推上 `main`
-2. 目前工作樹中則累積了一批新的 Obsidian / pending-review triage / reviewed-sync / downstream intake gate 變更，目標是把 repo-first + reviewed-sync + downstream restricted consumer profile 落成明確工具與 workflow 契約
+2. 之後又陸續完成 Obsidian / pending-review triage / reviewed-sync / downstream intake gate 這條產品化路線，並已把 downstream restricted consumer profile、one-click wrapper 與相關文件契約收斂推上 `main`
 
-這份 handoff 的用途，是把「自上一份 handoff 後已完成了什麼」和「目前這批準備帶去公司繼續接手的變更」一次講清楚。
+這份 handoff 的用途，是把「自上一份 handoff 後已完成了什麼」和「目前 remaining follow-up 應從哪裡接手」一次講清楚。
 
 ## Current branch
 
@@ -191,6 +191,7 @@ main
 - downstream restricted mount generator 與 opt-in bootstrap / sync apply integration 之後，active docs 已再往前收斂成 operator-facing alias 與 one-click wrapper command：`workflow_core_sync_update.py`
 - 這批 one-click wrapper / active docs / regression follow-up 已再提交並推上 `main`：`01dd164 feat: add one-click workflow core sync`
 - 這批 downstream mount contract / docs unify / failure-path regression follow-up 已再提交並推上 `main`：`10266e3 feat: default downstream obsidian inbox zone`
+- 這批 downstream docs wording 收斂已再提交並推上 `main`：`15d6059 docs: align downstream obsidian access contract`
 - downstream restricted consumer profile 已確認：`10-inbox/pending-review-notes/` 是 default writable mount，但只在 capture / triage 命中時 on-demand read；`10-inbox/reviewed-sync-candidates/` 與 `30-archives/` 對 downstream 都不屬於可讀可寫面
 - 本地 `main` 的 commit history 仍與 `origin/main` 對齊，沒有這批 follow-up 的殘留 worktree 差異
 
@@ -360,7 +361,7 @@ main
 
 ## Next exact prompt
 
-請先讀 `maintainers/chat/handoff/2026-03-22-obsidian-sync-and-triage-handoff.md`，特別是 `Current stage` 與 `Immediate next work after this commit`。目前 `origin/main` 已包含 handoff follow-up、vault visibility 補充、single-root Explorer exposure、downstream restricted mount generator、opt-in bootstrap / sync apply integration、`01dd164 feat: add one-click workflow core sync`，以及 `10266e3 feat: default downstream obsidian inbox zone`。目前 downstream restricted consumer profile 已確認：`10-inbox/pending-review-notes/` 是 default writable mount，但只在 capture / triage 命中時 on-demand read；`10-inbox/reviewed-sync-candidates/` 與 `30-archives/` 對 downstream 一律不讀不寫。若要延續這條線，優先處理剩餘的可攜性與更深層 regression，而不是再回頭調整已收斂的 downstream mount 說法。若未來再次看到 staged 刪除加 unstaged 回填的混合狀態，先用 `git add -A` 重新收斂目前 worktree，再判斷真實 diff 面。
+請先讀 `maintainers/chat/handoff/2026-03-22-obsidian-sync-and-triage-handoff.md`，特別是 `Current stage` 與 `Immediate next work after this commit`。目前 `origin/main` 已包含 handoff follow-up、vault visibility 補充、single-root Explorer exposure、downstream restricted mount generator、opt-in bootstrap / sync apply integration、`01dd164 feat: add one-click workflow core sync`、`10266e3 feat: default downstream obsidian inbox zone`，以及 `15d6059 docs: align downstream obsidian access contract`。目前 downstream restricted consumer profile 已確認：`10-inbox/pending-review-notes/` 是 default writable mount，但只在 capture / triage 命中時 on-demand read；`10-inbox/reviewed-sync-candidates/` 與 `30-archives/` 對 downstream 一律不讀不寫，而 `reviewed-sync-candidates` 應視為 workflow template repo / full curator profile 專用 lane。若要延續這條線，優先處理剩餘的可攜性與更深層 regression，而不是再回頭調整已收斂的 downstream mount 說法。若未來再次看到 staged 刪除加 unstaged 回填的混合狀態，先用 `git add -A` 重新收斂目前 worktree，再判斷真實 diff 面。
 
 ## Risks
 
@@ -388,6 +389,7 @@ main
 - 已驗證：新增的 one-click wrapper command `workflow_core_sync_update.py` 已能以單一入口串接 `sync stage -> sync apply -> sync verify`，並可在預設 staging root rerun 時自動覆蓋舊的 generated staging tree。
 - 已完成：one-click wrapper / active docs / regression follow-up 已提交為 `01dd164 feat: add one-click workflow core sync`。
 - 已完成：downstream writable inbox zone / docs unify / failure-path regression follow-up 已提交為 `10266e3 feat: default downstream obsidian inbox zone`。
+- 已完成：downstream access wording 收斂已提交為 `15d6059 docs: align downstream obsidian access contract`。
 - 已驗證：目前 `origin/main` 上的 downstream restricted profile generator 已帶出 `10-inbox/pending-review-notes/` default writable mount，且這個區域只在 capture / triage 命中時 on-demand read；`10-inbox/reviewed-sync-candidates/` 與 `30-archives/` 對 downstream 不提供 read 或 write。
 - 已驗證：focused suite `pytest -q tests/test_workflow_core_wrapper_commands.py tests/test_workflow_core_export_materialize.py tests/test_workflow_core_obsidian_restricted_mount.py tests/test_pending_review_recorder_skill.py tests/test_reviewed_sync_manager_skill.py` 通過，結果為 `41 passed`。
 - 目前狀態：git history 仍與 `origin/main` 對齊；若後續再看到 repo 差異，應先區分是不是新的可攜性 / regression follow-up，而不是這批已提交的 downstream mount 契約收斂。

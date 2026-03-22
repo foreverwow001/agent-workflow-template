@@ -55,7 +55,7 @@ ObsidianVault/
 
 - `00-indexes/` 與 `20-reviewed/` 作為主要 read-only mount 區
 - `10-inbox/pending-review-notes/` 作為 downstream default 的 writable inbox zone，且只在 capture / triage 命中時 on-demand read
-- `10-inbox/reviewed-sync-candidates/` 對 downstream 預設不提供 read 或 write
+- `10-inbox/reviewed-sync-candidates/` 作為 workflow template repo / full curator profile 的 candidate staging lane，對 downstream 預設不提供 read 或 write
 - `30-archives/` 預設不提供給 agent 讀取
 
 若同時存在 workflow template repo 與 downstream project repo，建議不要共用同一套 mount 權限，而是依 repo 角色切成不同 access profile。
@@ -84,7 +84,7 @@ ObsidianVault/
 在受控 mount 模式下：
 
 - `pending-review-notes/` 可作為 downstream default 的 writable inbox zone，但不屬於啟動前置閱讀面，只在 capture / triage 命中時 on-demand read
-- `reviewed-sync-candidates/` 對 downstream 不應提供 read 或 write
+- `reviewed-sync-candidates/` 是 workflow template repo / full curator profile 的 candidate staging lane；對 downstream 不應提供 read 或 write
 
 ### 3.3 `20-reviewed/agent-workflow-template/`
 
@@ -217,7 +217,7 @@ ObsidianVault/
 但即使在 workflow template repo，也建議保留流程限制：
 
 - 原始 capture 優先寫進 `pending-review-notes/`
-- 整理後候選內容優先寫進 `reviewed-sync-candidates/`
+- 整理後候選內容優先寫進 `reviewed-sync-candidates/`；這條 lane 也只屬於 workflow template repo / full curator profile
 - 只有在 user 明確要求或 maintainer review 完成後，才把內容移進 `20-reviewed/`
 - `30-archives/` 應視為低頻整理區，不建議當日常工作區使用
 
@@ -244,7 +244,7 @@ ObsidianVault/
 1. 用 Obsidian Web Clipper 做 capture
 2. 把原始內容落在 `10-inbox/pending-review-notes/`
 3. 用 VS Code + 模板 + agent 對 capture 做理解、整理、摘要、分類與 takeaways 萃取
-4. 把整理後輸出寫到 `10-inbox/reviewed-sync-candidates/`
+4. 在 workflow template repo / full curator profile 下，把整理後輸出寫到 `10-inbox/reviewed-sync-candidates/`
 5. 經人工 review 後，再移入 `20-reviewed/` 的對應正式區域
 
 一句話講清楚：
@@ -288,6 +288,8 @@ Synthesis 階段由 VS Code + 你的模板 + agent 執行，重點是：
 Synthesis 輸出建議先進：
 
 - `10-inbox/reviewed-sync-candidates/`
+
+這條 candidate lane 應明確視為 workflow template repo / full curator profile 專用；downstream restricted consumer profile 不讀不寫這個區域。
 
 這一層不是最終知識，而是待 review 的 candidate。
 
@@ -689,6 +691,7 @@ related_projects:
 適用於尚待 review 的候選同步內容。
 
 這個範本對應的是 `10-inbox/reviewed-sync-candidates/`，不是 `10-inbox/pending-review-notes/`。
+它也應理解為 workflow template repo / full curator profile 使用的 candidate staging note 範本，而不是 downstream 預設工作面。
 
 ```yaml
 ---
