@@ -250,6 +250,48 @@ main
 4. 搜尋是否真的有流程會執行 `.agent/scripts/run_codex_template.sh` 或其他會改 index/worktree 的 wrapper
 5. 若確認這批變更都不是要保留的工作成果，再決定是否清理回 `origin/main`
 
+## Resolution at company
+
+後續在公司端實際收尾時，最後證實這不是「上一輪功能變更沒有 commit/push 完」的問題，而是 index 與 worktree 疊出來的混合狀態。
+
+### 實際處理方式
+
+實際採用的收斂步驟如下：
+
+1. 先重新確認 focused tests 仍可通過：
+  - `./.venv/bin/python -m unittest tests.test_pending_review_recorder_skill tests.test_reviewed_sync_manager_skill tests.test_dev_entry_workflow_contract`
+2. 對整個目前 worktree 重新做一次整體 stage：
+  - `git add -A`
+3. 再看真正的 staged diff：
+  - `git diff --cached --stat`
+
+### 結果
+
+- 重新 stage 之後，原本混在一起的 staged 整批刪除與 unstaged 回填直接收斂掉
+- staged diff 最後只剩這份 handoff 的 follow-up 補充，不再有 Obsidian / pending-review / reviewed-sync 那批功能檔案的實質差異
+- 這代表先前看到的 `MM`、staged `D`、`??` 混合狀態，核心問題確實是 index/worktree 疊出的本地異常狀態，不是遠端缺 commit
+
+### 被證實與未被證實的假說
+
+已被證實：
+
+- `0f9bef3 feat: add obsidian triage and reviewed sync tooling` 這批功能變更早已在 `origin/main`
+- devcontainer rebuild 路徑本身沒有直接改 git state 的命令
+- 問題可以透過重新 stage 目前 worktree，把假的兩層差異收斂回真實差異面
+
+尚未被直接證實：
+
+- `.agent/scripts/run_codex_template.sh` 是否真的在公司端被執行並造成這次異常
+- VS Code Source Control 或其他本地 wrapper 是否曾在更早階段動過 index
+
+### 最後收尾動作
+
+在重新 stage 後，唯一剩下的真實變更是 handoff follow-up 本身，因此後續只需要把這份 handoff 更新提交即可：
+
+- `62dab22 docs: update obsidian sync handoff follow-up`
+
+這個 commit 之後，本地 `main` 工作樹已恢復乾淨；若尚未 push，狀態應是本地 `main` 相對 `origin/main` ahead 1。
+
 ## What was rejected or intentionally constrained
 
 - 不把 `reviewed-sync-manager` 匯出給 downstream repo；它維持 workflow-template-only maintainer tool。
@@ -270,7 +312,7 @@ main
 
 ## Next exact prompt
 
-請先讀 `maintainers/chat/handoff/2026-03-22-obsidian-sync-and-triage-handoff.md`，特別是 `Follow-up issue discovered after this handoff draft` 這一節。先不要直接延伸功能，先確認目前公司端 workspace 的 git dirty state：檢查 `git status --short --branch`、`git rev-parse --short HEAD`、`git rev-parse --short origin/main`、`git diff --cached --stat`、`git diff --stat`，判斷 staged 刪除與 unstaged 回填是不是殘留的本地 index/worktree 狀態。再檢查 `.agent/runtime/scripts/devcontainer/post_create.sh`、`.devcontainer/devcontainer.json`、`.devcontainer/devcontainer.ghcr.json` 與 `.agent/scripts/run_codex_template.sh`，確認到底是哪條路徑可能影響 git 狀態。若 dirty state 釐清或清理完成，再回來做 downstream restricted Obsidian mount contract / generator 設計，或補 recorder / reviewed-sync / intake gate 的 regression coverage。
+請先讀 `maintainers/chat/handoff/2026-03-22-obsidian-sync-and-triage-handoff.md`，特別是 `Resolution at company` 這一節。公司端的 dirty state 已確認是 index/worktree 混合狀態，並已透過重新 stage 目前 worktree 收斂回真實差異；`0f9bef3` 不是漏 push。下一步不要再花時間追這次 dirty tree，而是直接延續未完成的產品化工作：優先做 downstream restricted Obsidian mount contract / generator 設計，或補 recorder / reviewed-sync / intake gate 的 regression coverage。若未來再次看到類似 staged 刪除加 unstaged 回填的混合狀態，先用 `git add -A` 重新收斂目前 worktree，再判斷真實 diff 面。
 
 ## Risks
 
@@ -279,14 +321,16 @@ main
 - downstream restricted mount 的設計方向已清楚，但尚未實作成正式 bootstrap / generator contract。
 - `pending-review-recorder` 雖已有 focused tests，但若未來擴大自動寫入事件類型，仍需防止 note 爆量與 dedupe 漂移。
 - 目前 workflow 契約已限制 downstream 啟動讀取面；若後續 docs / role prompts 再變更，需維持 `AGENT_ENTRY.md`、`dev-team.md`、`coordinator.md` 與 contract test 同步。
-- 公司電腦目前觀察到的 dirty state 可能讓人誤以為上一輪 commit / push 沒成功；實際上曾經確認過 `HEAD` 與 `origin/main` 都在 `0f9bef3`，所以要先區分「已推上遠端的歷史」與「本地 index/worktree 異常」。
-- 若沒先拆清 staged 刪除與 unstaged 回填來源，就直接在公司端繼續修改或 commit，容易把不該存在的本地殘留狀態一起帶進新提交。
+- 公司端這次 dirty state 雖已排除，但它暴露出一個實務風險：若直接看見 staged 刪除與 unstaged 回填混在一起，就貿然修改或 commit，容易把假的 index 狀態誤判成新的功能變更。
+- `.agent/scripts/run_codex_template.sh` 仍含 git reset/restore 清理邏輯；雖未證實是這次根因，但未來若再出現相同型態異常，仍應優先納入排查。
 
 ## Verification status
 
 - 已驗證：上一份 handoff 之後新增的 4 個 commit 已在 `main`，且 `origin/main` 與本地對齊。
 - 已驗證：目前未提交的 Obsidian / triage / reviewed-sync / gate 變更 focused tests 通過，結果為 `14 tests OK`。
 - 已驗證：目前關鍵新 script 與測試檔無 editor diagnostics。
-- 尚未完成：把目前這批未提交檔案正式 commit 並 push。
 - 後續另已驗證過一次：Obsidian / triage / reviewed-sync 那批變更曾成功 commit / push 為 `0f9bef3 feat: add obsidian triage and reviewed sync tooling`，而且當時本地 `HEAD` 與 `origin/main` 相同。
 - 後續另已驗證過一次：devcontainer rebuild 路徑本身沒有直接修改 git state 的命令；dirty tree 較像是公司端本地 workspace / index 殘留狀態重新浮現。
+- 已驗證：重新執行 `git add -A` 後，混合的 staged deletion / unstaged 回填已收斂，只剩 handoff follow-up 本身是真實差異。
+- 已完成：handoff follow-up 已提交為 `62dab22 docs: update obsidian sync handoff follow-up`。
+- 目前狀態：本地 `main` 工作樹乾淨；若尚未 push，則相對 `origin/main` ahead 1。
