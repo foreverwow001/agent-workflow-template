@@ -60,5 +60,6 @@ python .agent/runtime/scripts/workflow_core_sync_apply.py --repo-root . --releas
 
 - single-root workspace，不使用 multi-root workspace
 - repo 內 access surface 固定落在 `obsidian-knowledge/`
-- 只 mount `obsidian-knowledge/00-indexes/` 與 `obsidian-knowledge/20-reviewed/`
-- 不預設 mount `10-inbox/pending-review-notes/`、`10-inbox/reviewed-sync-candidates/`、`30-archives/` 或 full vault
+- 預設 read-only 面為 `obsidian-knowledge/00-indexes/` 與 `obsidian-knowledge/20-reviewed/`
+- 預設 writable inbox zone 為 `obsidian-knowledge/10-inbox/pending-review-notes/`
+- 不預設 mount `10-inbox/reviewed-sync-candidates/`、`30-archives/` 或 full vault

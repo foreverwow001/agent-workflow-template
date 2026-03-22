@@ -54,8 +54,8 @@ ObsidianVault/
 這份結構的推薦使用方式是：
 
 - `00-indexes/` 與 `20-reviewed/` 作為主要 read-only mount 區
-- `10-inbox/reviewed-sync-candidates/` 作為可選的受控 writable zone
-- `10-inbox/pending-review-notes/` 作為 capture raw material 的 on-demand read zone
+- `10-inbox/pending-review-notes/` 作為 downstream default 的 writable inbox zone
+- `10-inbox/reviewed-sync-candidates/` 作為可選的額外 writable zone
 - `30-archives/` 預設不提供給 agent 讀取
 
 若同時存在 workflow template repo 與 downstream project repo，建議不要共用同一套 mount 權限，而是依 repo 角色切成不同 access profile。
@@ -83,8 +83,8 @@ ObsidianVault/
 
 在受控 mount 模式下：
 
-- `pending-review-notes/` 預設不常駐 mount，但可在 user 明確要求處理新 capture 時，作為 on-demand read zone 暫時提供給 agent
-- `reviewed-sync-candidates/` 不應整層預設開放寫入；若需要 agent 寫入，建議只針對這個子資料夾開放，而且必須以 user 明確指令觸發
+- `pending-review-notes/` 可作為 downstream default 的 writable inbox zone，但不屬於啟動前置閱讀面
+- `reviewed-sync-candidates/` 不應整層預設開放寫入；若需要 agent 寫入，建議只針對這個子資料夾額外 opt-in 開放，而且必須以 user 明確指令觸發
 
 ### 3.3 `20-reviewed/agent-workflow-template/`
 
@@ -146,9 +146,9 @@ ObsidianVault/
   - `20-reviewed/<downstream-project-name>/decision-records/`
   - `20-reviewed/<downstream-project-name>/development-reference/`
   - `20-reviewed/lessons-learned/`
-- on-demand read
+- default writable mount
   - `10-inbox/pending-review-notes/`
-- optional writable mount
+- optional extra writable mount
   - `10-inbox/reviewed-sync-candidates/`
 - default no-mount
   - `30-archives/`
@@ -325,8 +325,8 @@ Synthesis 輸出建議先進：
 這套流程的核心，不是讓 agent 預設可寫整個 vault，而是：
 
 - 預設讀取：`00-indexes/` 與 `20-reviewed/`
-- 按需讀取：`10-inbox/pending-review-notes/`，只在 user 明確要求處理新 capture 時使用
-- 受控寫入：`10-inbox/reviewed-sync-candidates/`，只在 user 明確要求生成 candidate 時使用
+- 預設 writable inbox zone：`10-inbox/pending-review-notes/`，用於 capture / triage 命中時的正式支援寫入
+- 額外 opt-in writable zone：`10-inbox/reviewed-sync-candidates/`，只在 user 明確要求生成 candidate 時使用
 - 預設不寫入：`20-reviewed/` 與 `30-archives/`
 
 這樣才同時兼顧：

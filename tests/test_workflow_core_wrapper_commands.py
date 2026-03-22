@@ -510,6 +510,7 @@ class WorkflowCoreWrapperCommandsTest(unittest.TestCase):
 
             restored = (downstream_root / ".agent" / "workflows" / "example.md").read_text(encoding="utf-8")
             snippet_exists = (downstream_root / ".devcontainer" / "devcontainer.obsidian-restricted.jsonc").exists()
+            snippet_text = (downstream_root / ".devcontainer" / "devcontainer.obsidian-restricted.jsonc").read_text(encoding="utf-8")
             stale_exists = (Path(second_result["staging_root"]) / "stale.txt").exists()
 
         self.assertEqual(first_result["status"], "pass")
@@ -521,7 +522,72 @@ class WorkflowCoreWrapperCommandsTest(unittest.TestCase):
         self.assertTrue(second_result["obsidian_mount_sample_generated"])
         self.assertEqual(restored, "remote one-click workflow\n")
         self.assertTrue(snippet_exists)
+        self.assertIn("obsidian-knowledge/10-inbox/pending-review-notes", snippet_text)
         self.assertFalse(stale_exists)
+
+    def test_sync_update_cli_errors_when_custom_staging_root_is_not_empty_without_replace_flag(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo_root = Path(temp_dir)
+            init_git_repo(repo_root)
+            write_manifest(repo_root)
+            write_runtime_scripts(repo_root)
+            create_required_live_paths(repo_root, include_index=True)
+            managed_file = repo_root / ".agent" / "workflows" / "example.md"
+            managed_file.write_text("v1\n", encoding="utf-8")
+            baseline_commit = commit_all(repo_root, "baseline")
+            subprocess.run(["git", "-C", str(repo_root), "tag", "core-v20260322-error", baseline_commit], check=True)
+
+            staging_root = repo_root / "custom-staging"
+            staging_root.mkdir(parents=True, exist_ok=True)
+            (staging_root / "keep.txt").write_text("keep\n", encoding="utf-8")
+
+            completed = subprocess.run(
+                [
+                    sys.executable,
+                    str(SCRIPTS_DIR / "workflow_core_sync_update.py"),
+                    "--repo-root",
+                    str(repo_root),
+                    "--manifest",
+                    str(repo_root / "core_ownership_manifest.yml"),
+                    "--release-ref",
+                    "core-v20260322-error",
+                    "--staging-root",
+                    str(staging_root),
+                    "--json",
+                ],
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            error_payload = json.loads(completed.stderr)
+
+        self.assertEqual(completed.returncode, self.sync_update.EXIT_ERROR)
+        self.assertIn("staging root is not empty", error_payload["error"])
+
+    def test_sync_update_reports_sync_apply_failure_when_managed_path_diverges(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo_root = Path(temp_dir)
+            init_git_repo(repo_root)
+            write_manifest(repo_root)
+            write_runtime_scripts(repo_root)
+            create_required_live_paths(repo_root, include_index=True)
+            managed_file = repo_root / ".agent" / "workflows" / "example.md"
+            managed_file.write_text("v1\n", encoding="utf-8")
+            baseline_commit = commit_all(repo_root, "baseline")
+            subprocess.run(["git", "-C", str(repo_root), "tag", "core-v20260322-diverge", baseline_commit], check=True)
+            managed_file.write_text("local divergent change\n", encoding="utf-8")
+
+            result = self.sync_update.run_sync_update(
+                repo_root=repo_root,
+                manifest_path=repo_root / "core_ownership_manifest.yml",
+                release_ref="core-v20260322-diverge",
+            )
+
+        self.assertEqual(result["status"], "fail")
+        self.assertEqual(result["failed_stage"], "sync-apply")
+        self.assertEqual(result["stage_result"]["status"], "pass")
+        self.assertEqual(result["apply_result"]["status"], "fail")
+        self.assertIsNone(result["verify_result"])
 
     def test_sync_verify_passes_with_manifest_backed_checks(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

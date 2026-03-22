@@ -266,6 +266,81 @@ class ReviewedSyncManagerSkillTest(unittest.TestCase):
         self.assertNotEqual(archived_name, second_candidate_path.name)
         self.assertTrue(archived_name.startswith(second_candidate_path.stem + "-"))
 
+    def test_promote_candidate_merge_adds_new_index_target_without_losing_existing_ones(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            vault_root = build_vault(Path(temp_dir))
+            first_candidate = self.tool.write_candidate(
+                vault_root,
+                {
+                    "title": "multi index summary",
+                    "source_repo": "agent-workflow-template",
+                    "source_path": "maintainers/chat/2026-03-20-project-maintainers-obsidian-sync-policy.md",
+                    "source_type": "maintainer-policy",
+                    "summary_text": "第一版 summary。",
+                    "target_reviewed_dir": "agent-workflow-template/workflow-knowledge",
+                    "index_targets": ["workflows.md"],
+                },
+            )
+            first_promote = self.tool.promote_candidate(vault_root, Path(first_candidate["target_note"]))
+
+            second_candidate = self.tool.write_candidate(
+                vault_root,
+                {
+                    "title": "multi index summary",
+                    "source_repo": "agent-workflow-template",
+                    "source_path": "maintainers/chat/2026-03-20-project-maintainers-obsidian-sync-policy.md",
+                    "source_type": "maintainer-policy",
+                    "summary_text": "第二版 summary。",
+                    "target_reviewed_dir": "agent-workflow-template/workflow-knowledge",
+                    "index_targets": ["workflows.md", "topics.md"],
+                },
+            )
+            second_promote = self.tool.promote_candidate(vault_root, Path(second_candidate["target_note"]))
+
+            reviewed_content = Path(first_promote["target_note"]).read_text(encoding="utf-8")
+            reviewed_frontmatter, _body = self.tool.parse_frontmatter(reviewed_content)
+            topics_index = (vault_root / "00-indexes" / "topics.md").read_text(encoding="utf-8")
+
+        self.assertEqual(second_promote["action"], "merge")
+        self.assertIn(str(vault_root / "00-indexes" / "topics.md"), second_promote["updated_indexes"])
+        self.assertEqual(reviewed_frontmatter["index_targets"], ["workflows.md", "topics.md"])
+        self.assertIn("multi index summary", topics_index)
+
+    def test_promote_candidate_merge_reuses_single_promotion_updates_section(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            vault_root = build_vault(Path(temp_dir))
+            first_candidate = self.tool.write_candidate(
+                vault_root,
+                {
+                    "title": "merge body drift summary",
+                    "source_repo": "agent-workflow-template",
+                    "source_path": "maintainers/chat/2026-03-20-project-maintainers-obsidian-sync-policy.md",
+                    "source_type": "maintainer-policy",
+                    "summary_text": "第一版 summary。",
+                    "target_reviewed_dir": "agent-workflow-template/workflow-knowledge",
+                },
+            )
+            first_promote = self.tool.promote_candidate(vault_root, Path(first_candidate["target_note"]))
+
+            for summary_text in ["第二版 summary。", "第三版 summary。"]:
+                candidate = self.tool.write_candidate(
+                    vault_root,
+                    {
+                        "title": "merge body drift summary",
+                        "source_repo": "agent-workflow-template",
+                        "source_path": "maintainers/chat/2026-03-20-project-maintainers-obsidian-sync-policy.md",
+                        "source_type": "maintainer-policy",
+                        "summary_text": summary_text,
+                        "target_reviewed_dir": "agent-workflow-template/workflow-knowledge",
+                    },
+                )
+                self.tool.promote_candidate(vault_root, Path(candidate["target_note"]))
+
+            reviewed_body = Path(first_promote["target_note"]).read_text(encoding="utf-8")
+
+        self.assertEqual(reviewed_body.count("## Promotion Updates"), 1)
+        self.assertEqual(reviewed_body.count("merged candidate update"), 2)
+
     def test_tool_rejects_non_template_repo(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             vault_root = build_vault(Path(temp_dir))

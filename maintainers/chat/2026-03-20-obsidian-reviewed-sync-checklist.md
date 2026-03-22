@@ -45,14 +45,15 @@
   - `00-indexes/`
   - `20-reviewed/`
   - 必要時才包含特定 `30-project-mirrors/<repo>/`
-- optional writable mount
+- default writable mount
+  - `10-inbox/pending-review-notes/`
+- optional extra writable mount
   - `10-inbox/reviewed-sync-candidates/`
 - default no-mount
-  - `10-inbox/pending-review-notes/`
   - `30-archives/`
   - 私人草稿、原始捕捉資料、敏感資料區
 
-原則是：讀取預設放在 read-only mount，寫入只集中到單一 writable zone。
+原則是：讀取預設放在 read-only mount；downstream default 的寫入只集中到 `10-inbox/pending-review-notes/` 這個單一 writable inbox zone。
 
 補充：目前這個 workflow template repo 的 Dev Container 實作，已為 maintainer-local 環境直接提供 full-vault mount 到 `/obsidian/vault`。因此這份邊界定義應理解為治理建議與 downstream 預設，不是說 template repo 目前仍停留在 restricted mount 模式。
 

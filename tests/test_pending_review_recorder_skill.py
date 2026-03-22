@@ -171,6 +171,33 @@ class PendingReviewRecorderSkillTest(unittest.TestCase):
         self.assertEqual(frontmatter["impact_level"], "high")
         self.assertIn("## Update History", updated_content)
 
+    def test_record_event_dedupes_evidence_refs_and_tags_during_merge(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            notes_dir = Path(temp_dir)
+            self.recorder.record_event(base_payload(), notes_dir)
+
+            payload = base_payload()
+            payload["evidence_refs"] = [
+                "pytest tests/test_login.py::test_seeded_admin_login",
+                "ci run #1234",
+                "ci run #1234",
+            ]
+            payload["tags"] = ["pending-review", "qa", "triage", "qa", "needs-owner"]
+
+            result = self.recorder.record_event(payload, notes_dir)
+            content = Path(result["target_note"]).read_text(encoding="utf-8")
+            frontmatter, _body = self.recorder.parse_frontmatter(content)
+
+        self.assertEqual(result["action"], "update")
+        self.assertEqual(
+            frontmatter["evidence_refs"],
+            [
+                "pytest tests/test_login.py::test_seeded_admin_login",
+                "ci run #1234",
+            ],
+        )
+        self.assertEqual(frontmatter["tags"], ["pending-review", "qa", "triage", "needs-owner"])
+
 
 if __name__ == "__main__":
     unittest.main()

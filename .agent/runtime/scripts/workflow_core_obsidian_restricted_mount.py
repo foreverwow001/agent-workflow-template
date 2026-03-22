@@ -19,6 +19,7 @@ GUIDE_FILENAME = "OBSIDIAN_RESTRICTED_MOUNT.md"
 GITIGNORE_ENTRY = "obsidian-knowledge/"
 HOST_ENV_VAR = "OBSIDIAN_HOST_VAULT_ROOT"
 ACCESS_ROOT = "/workspaces/${localWorkspaceFolderBasename}/obsidian-knowledge"
+PENDING_REVIEW_REL = "10-inbox/pending-review-notes"
 
 
 def render_devcontainer_snippet() -> str:
@@ -27,11 +28,13 @@ def render_devcontainer_snippet() -> str:
             "OBSIDIAN_VAULT_ROOT": ACCESS_ROOT,
             "OBSIDIAN_INDEX_ROOT": f"{ACCESS_ROOT}/00-indexes",
             "OBSIDIAN_REVIEWED_ROOT": f"{ACCESS_ROOT}/20-reviewed",
+            "OBSIDIAN_PENDING_REVIEW_ROOT": f"{ACCESS_ROOT}/{PENDING_REVIEW_REL}",
             "OBSIDIAN_CONSUMER_PROFILE": "restricted",
         },
         "mounts": [
             f"source=${{localEnv:{HOST_ENV_VAR}}}/00-indexes,target={ACCESS_ROOT}/00-indexes,type=bind",
             f"source=${{localEnv:{HOST_ENV_VAR}}}/20-reviewed,target={ACCESS_ROOT}/20-reviewed,type=bind",
+            f"source=${{localEnv:{HOST_ENV_VAR}}}/{PENDING_REVIEW_REL},target={ACCESS_ROOT}/{PENDING_REVIEW_REL},type=bind",
         ],
     }
     return (
@@ -51,8 +54,9 @@ def render_mount_guide() -> str:
 ## 目的
 
 - 讓 downstream workflow 在需要時可讀取 Obsidian 的 `00-indexes/` 與最小必要 `20-reviewed/`
+- 讓 downstream workflow 在 capture / triage 命中時可寫入 `10-inbox/pending-review-notes/`，作為正式支援的 writable inbox zone
 - 保持 single-root workspace；Explorer 看到的 access surface 會落在 repo 內的 `obsidian-knowledge/`
-- 避免把 full vault、`10-inbox/pending-review-notes/`、`10-inbox/reviewed-sync-candidates/`、`30-archives/` 帶進 downstream 預設工作面
+- 避免把 full vault、`10-inbox/reviewed-sync-candidates/`、`30-archives/` 帶進 downstream 預設工作面
 
 ## 使用方式
 
@@ -64,12 +68,14 @@ def render_mount_guide() -> str:
 
 - `obsidian-knowledge/00-indexes/`
 - `obsidian-knowledge/20-reviewed/`
+- `obsidian-knowledge/10-inbox/pending-review-notes/`
+
+其中 `10-inbox/pending-review-notes/` 是 downstream default 的 writable inbox zone，但不屬於啟動前置閱讀面。
 
 這不是 multi-root workspace；VS Code 仍只打開 downstream repo 這一個 root。
 
 ## 明確禁止的預設 mount
 
-- `10-inbox/pending-review-notes/`
 - `10-inbox/reviewed-sync-candidates/`
 - `30-archives/`
 - 任何 full-vault mount

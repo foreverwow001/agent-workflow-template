@@ -166,7 +166,8 @@ Obsidian 不適合扮演：
 若 agent 在 Dev Container 中需要直接使用 Obsidian 內容，推薦方式如下：
 
 - 以 read-only mount 提供 `00-indexes/` 與 `20-reviewed/` 等已核准區域
-- 視需要提供單一、受控的 writable zone，例如 `10-inbox/reviewed-sync-candidates/`
+- downstream default 正式提供單一、受控的 writable inbox zone：`10-inbox/pending-review-notes/`
+- `10-inbox/reviewed-sync-candidates/` 只在明確需要 candidate drafting 時，才額外 opt-in 開放
 - downstream project repo 不要把整個 vault 以可寫方式掛進 container
 - 不要把未審核區、archive、私人原始材料預設暴露給 agent
 
