@@ -186,6 +186,16 @@
   --staging-root .workflow-core/staging/core-v20260320-1
 ```
 
+若這次 downstream 同步也要一併產出受控的 Obsidian access sample，建議直接使用較高層的 alias 旗標：
+
+```bash
+/path/to/python .agent/runtime/scripts/workflow_core_sync_apply.py \
+  --repo-root . \
+  --release-ref core-v20260320-1 \
+  --staging-root .workflow-core/staging/core-v20260320-1 \
+  --setup-obsidian-restricted-access
+```
+
 目前 `sync apply` 的行為：
 
 1. 先跑 manifest-backed `sync precheck`

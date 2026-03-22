@@ -286,6 +286,16 @@ python .agent/runtime/scripts/workflow_core_sync_verify.py \
   --staging-root .workflow-core/staging/core-v20260320-2
 ```
 
+若這個 downstream repo 需要 Dev Container 內的受控 Obsidian 讀取面，請優先用新的高層 alias，而不是直接記低階 generator / sample 旗標：
+
+```bash
+python .agent/runtime/scripts/workflow_core_sync_apply.py \
+  --repo-root . \
+  --release-ref core-v20260320-2 \
+  --staging-root .workflow-core/staging/core-v20260320-2 \
+  --setup-obsidian-restricted-access
+```
+
 如果 `sync precheck` 因 `.workflow-core/staging/**` 回 `warn`，這在目前模型下是預期訊號；真正 blocking 的是 core managed path divergence。
 
 ---

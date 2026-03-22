@@ -346,9 +346,9 @@ main
 
 若到公司後要延續這條線，建議優先順序如下：
 
-1. 直接做 downstream 專用 Obsidian restricted mount contract / generator，避免 downstream repo 誤沿用 template repo 的 full-vault maintainer profile
-2. 若要讓 downstream bootstrap automation 支援 Obsidian access，優先做 restricted partial-vault profile，而不是 export full-vault config
-3. 把 downstream 的 Obsidian access surface 固定成 single-root repo-local shape，再由 gate / docs / generator 一起收斂
+1. 若要讓 downstream 操作面更一致，優先在 active docs / SOP / onboarding 範例統一使用 `--setup-obsidian-restricted-access`，不要同時教兩套旗標名稱
+2. 若未來還要再往上收斂 operator surface，應做更高層 wrapper command，而不是回頭把 `.devcontainer/**` 變成 export-managed surface
+3. 持續維持 downstream 的 Obsidian access surface 為 single-root repo-local shape，避免任何文件或新工具把使用者帶回 full-vault / multi-root 心智模型
 4. 視需要再補更正式的 regression：
    - downstream restricted mount contract
    - pending-review-recorder CLI payload edge cases
@@ -356,13 +356,13 @@ main
 
 ## Next exact prompt
 
-請先讀 `maintainers/chat/handoff/2026-03-22-obsidian-sync-and-triage-handoff.md`，特別是 `Resolution at company`、`Current stage` 與 `Immediate next work after this commit`。目前 handoff follow-up、vault visibility 補充與 single-root Explorer exposure 都已在 `origin/main`；因此不要再花時間處理舊的 ahead 2 歷史狀態，而是直接延續未完成的產品化工作：優先把 downstream restricted Obsidian mount contract / generator 落成正式交付物，並補對應 regression coverage。若未來再次看到 staged 刪除加 unstaged 回填的混合狀態，先用 `git add -A` 重新收斂目前 worktree，再判斷真實 diff 面。
+請先讀 `maintainers/chat/handoff/2026-03-22-obsidian-sync-and-triage-handoff.md`，特別是 `Resolution at company`、`Current stage` 與 `Immediate next work after this commit`。目前 handoff follow-up、vault visibility 補充、single-root Explorer exposure、downstream restricted mount generator，以及 opt-in bootstrap / sync apply integration 都已在 `origin/main`；因此不要再回頭處理舊的 ahead 2 歷史狀態，也不要再把 `.devcontainer/**` 當成 export-managed surface。若要延續這條線，優先做 active docs / onboarding 的操作面收斂，統一使用 `--setup-obsidian-restricted-access` 當作 operator-facing 入口。若未來再次看到 staged 刪除加 unstaged 回填的混合狀態，先用 `git add -A` 重新收斂目前 worktree，再判斷真實 diff 面。
 
 ## Risks
 
 - `reviewed-sync-manager` 目前是 template-only tool，若未來要把某部分能力下放 downstream，必須先重新切清 writer / promotion 邊界，而不是直接 export 整包。
 - template repo 目前 full-vault mount 使用的是 maintainer-local 路徑假設；這不具 downstream 可攜性。
-- downstream restricted mount 的設計方向已清楚，但尚未實作成正式 bootstrap / generator contract。
+- downstream restricted mount contract 與 opt-in bootstrap / sync apply integration 已落地；後續風險改為文件與 onboarding 操作面若不統一，容易讓使用者記成舊旗標名稱。
 - `pending-review-recorder` 雖已有 focused tests，但若未來擴大自動寫入事件類型，仍需防止 note 爆量與 dedupe 漂移。
 - 目前 workflow 契約已限制 downstream 啟動讀取面；若後續 docs / role prompts 再變更，需維持 `AGENT_ENTRY.md`、`dev-team.md`、`coordinator.md` 與 contract test 同步。
 - 公司端這次 dirty state 雖已排除，但它暴露出一個實務風險：若直接看見 staged 刪除與 unstaged 回填混在一起，就貿然修改或 commit，容易把假的 index 狀態誤判成新的功能變更。

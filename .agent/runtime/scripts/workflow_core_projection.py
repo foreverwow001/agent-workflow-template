@@ -24,6 +24,7 @@ from workflow_core_manifest import (  # noqa: E402
     path_matches_pattern,
     pattern_anchor,
 )
+from workflow_core_obsidian_restricted_mount import run_generate_downstream_obsidian_mount  # noqa: E402
 
 
 EXIT_PASS = 0
@@ -107,6 +108,9 @@ def run_projection(
     manifest_path: Path,
     source_root: Path | None = None,
     bootstrap_overlay_index_file: bool = False,
+    emit_obsidian_restricted_mount_sample: bool = False,
+    obsidian_mount_output_dir: Path | None = None,
+    force_obsidian_mount_sample: bool = False,
 ) -> dict:
     manifest = load_manifest(manifest_path)
     projection_artifact_path = get_projection_artifact_path(manifest)
@@ -130,6 +134,15 @@ def run_projection(
             missing_paths = [item for item in missing_paths if item != INDEX_PATH]
             notes.append("bootstrapped downstream overlay index placeholder")
 
+    mount_result = None
+    if emit_obsidian_restricted_mount_sample:
+        mount_result = run_generate_downstream_obsidian_mount(
+            repo_root=repo_root,
+            output_dir=obsidian_mount_output_dir,
+            force=force_obsidian_mount_sample,
+        )
+        notes.extend(mount_result.get("notes", []))
+
     if missing_paths:
         status = "fail"
         notes.append("projection/bootstrap found missing required live paths after materialization")
@@ -150,6 +163,8 @@ def run_projection(
         "missing_required_live_paths": missing_paths,
         "created_paths": created_paths,
         "projected_paths": projected_paths,
+        "obsidian_mount_sample_generated": bool(mount_result),
+        "obsidian_mount_output_dir": str(Path(mount_result["output_dir"]).resolve()) if mount_result else None,
         "notes": notes,
     }
 
@@ -159,12 +174,18 @@ def run_projection_stub(
     manifest_path: Path,
     bootstrap_overlay_index_file: bool = False,
     source_root: Path | None = None,
+    emit_obsidian_restricted_mount_sample: bool = False,
+    obsidian_mount_output_dir: Path | None = None,
+    force_obsidian_mount_sample: bool = False,
 ) -> dict:
     return run_projection(
         repo_root=repo_root,
         manifest_path=manifest_path,
         source_root=source_root,
         bootstrap_overlay_index_file=bootstrap_overlay_index_file,
+        emit_obsidian_restricted_mount_sample=emit_obsidian_restricted_mount_sample,
+        obsidian_mount_output_dir=obsidian_mount_output_dir,
+        force_obsidian_mount_sample=force_obsidian_mount_sample,
     )
 
 
@@ -190,6 +211,9 @@ def format_text_report(result: dict) -> str:
         lines.append("projected_paths:")
         for item in result["projected_paths"]:
             lines.append(f"  - {item}")
+    lines.append(f"obsidian_mount_sample_generated: {result['obsidian_mount_sample_generated']}")
+    if result["obsidian_mount_output_dir"]:
+        lines.append(f"obsidian_mount_output_dir: {result['obsidian_mount_output_dir']}")
     if result["notes"]:
         lines.append("notes:")
         for item in result["notes"]:
@@ -227,6 +251,29 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="若 doc/implementation_plan_index.md 缺失，建立最小 placeholder 作為 bootstrap stub",
     )
+    parser.add_argument(
+        "--emit-obsidian-restricted-mount-sample",
+        dest="emit_obsidian_restricted_mount_sample",
+        action="store_true",
+        help="額外產出 downstream restricted Obsidian mount sample（opt-in）",
+    )
+    parser.add_argument(
+        "--setup-obsidian-restricted-access",
+        dest="emit_obsidian_restricted_mount_sample",
+        action="store_true",
+        help="高層 alias：初始化 downstream restricted Obsidian access sample",
+    )
+    parser.add_argument(
+        "--obsidian-mount-output-dir",
+        type=Path,
+        default=None,
+        help="restricted mount sample 輸出目錄（預設：<repo-root>/.devcontainer）",
+    )
+    parser.add_argument(
+        "--force-obsidian-mount-sample",
+        action="store_true",
+        help="若 sample 已存在且內容不同，允許覆蓋",
+    )
     parser.add_argument("--json", action="store_true", help="輸出 JSON")
     return parser
 
@@ -242,6 +289,9 @@ def main(argv: list[str] | None = None) -> int:
             manifest_path=manifest_path,
             source_root=args.source_root.resolve() if args.source_root else None,
             bootstrap_overlay_index_file=bool(args.bootstrap_overlay_index),
+            emit_obsidian_restricted_mount_sample=bool(args.emit_obsidian_restricted_mount_sample),
+            obsidian_mount_output_dir=args.obsidian_mount_output_dir.resolve() if args.obsidian_mount_output_dir else None,
+            force_obsidian_mount_sample=bool(args.force_obsidian_mount_sample),
         )
     except Exception as exc:
         if args.json:

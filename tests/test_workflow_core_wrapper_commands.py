@@ -6,6 +6,7 @@ from __future__ import annotations
 import importlib.util
 import json
 import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -48,6 +49,7 @@ def write_runtime_scripts(repo_root: Path) -> None:
     files_to_copy = [
         "workflow_core_manifest.py",
         "workflow_core_contracts.py",
+        "workflow_core_obsidian_restricted_mount.py",
         "workflow_core_release_precheck.py",
         "workflow_core_release_create.py",
         "workflow_core_release_publish_notes.py",
@@ -326,6 +328,47 @@ class WorkflowCoreWrapperCommandsTest(unittest.TestCase):
         self.assertIn(".agent/workflows/example.md", result["changed_managed_paths"])
         self.assertEqual(verify_result["status"], "pass")
         self.assertEqual(restored, "from staged export\n")
+
+    def test_sync_apply_cli_alias_can_emit_obsidian_restricted_mount_sample(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo_root = Path(temp_dir)
+            init_git_repo(repo_root)
+            write_manifest(repo_root)
+            write_runtime_scripts(repo_root)
+            create_required_live_paths(repo_root, include_index=True)
+            managed_file = repo_root / ".agent" / "workflows" / "example.md"
+            managed_file.write_text("v1\n", encoding="utf-8")
+            baseline_commit = commit_all(repo_root, "baseline")
+            subprocess.run(["git", "-C", str(repo_root), "tag", "core-v20260322-obsidian", baseline_commit], check=True)
+
+            completed = subprocess.run(
+                [
+                    sys.executable,
+                    str(SCRIPTS_DIR / "workflow_core_sync_apply.py"),
+                    "--repo-root",
+                    str(repo_root),
+                    "--manifest",
+                    str(repo_root / "core_ownership_manifest.yml"),
+                    "--release-ref",
+                    "core-v20260322-obsidian",
+                    "--setup-obsidian-restricted-access",
+                    "--json",
+                ],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            result = json.loads(completed.stdout)
+
+            snippet_path = repo_root / ".devcontainer" / "devcontainer.obsidian-restricted.jsonc"
+            guide_path = repo_root / ".devcontainer" / "OBSIDIAN_RESTRICTED_MOUNT.md"
+            snippet_exists = snippet_path.exists()
+            guide_exists = guide_path.exists()
+
+        self.assertEqual(result["status"], "pass")
+        self.assertTrue(result["obsidian_mount_sample_generated"])
+        self.assertTrue(snippet_exists)
+        self.assertTrue(guide_exists)
 
     def test_sync_apply_allows_staging_tree_only_overlay_warning(self) -> None:
         precheck = {

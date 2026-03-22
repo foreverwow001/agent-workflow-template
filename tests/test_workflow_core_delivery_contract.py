@@ -12,6 +12,9 @@ tests/test_workflow_core_delivery_contract.py
 from __future__ import annotations
 
 import importlib.util
+import json
+import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -101,6 +104,36 @@ class WorkflowCoreDeliveryContractTest(unittest.TestCase):
         self.assertEqual(result["status"], "pass")
         self.assertIn(".agent/workflows/dev-team.md", result["projected_paths"])
         self.assertEqual(projected_text, "projected workflow\n")
+
+    def test_projection_cli_alias_can_emit_obsidian_restricted_mount_sample(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo_root = Path(temp_dir)
+            write_manifest(repo_root)
+            create_required_live_path_anchors(repo_root, include_index=True)
+
+            completed = subprocess.run(
+                [
+                    sys.executable,
+                    str(PROJECTION_FILE),
+                    "--repo-root",
+                    str(repo_root),
+                    "--manifest",
+                    str(repo_root / "core_ownership_manifest.yml"),
+                    "--setup-obsidian-restricted-access",
+                    "--json",
+                ],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            result = json.loads(completed.stdout)
+
+            snippet_path = repo_root / ".devcontainer" / "devcontainer.obsidian-restricted.jsonc"
+            snippet_exists = snippet_path.exists()
+
+        self.assertEqual(result["status"], "pass")
+        self.assertTrue(result["obsidian_mount_sample_generated"])
+        self.assertTrue(snippet_exists)
 
     def test_portable_smoke_passes_when_required_anchors_exist(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

@@ -30,6 +30,15 @@
 python .agent/runtime/scripts/workflow_core_obsidian_restricted_mount.py --repo-root .
 ```
 
+若你想在第一次 bootstrap 或後續 sync apply 時半自動產出 sample，也可改用 opt-in 旗標：
+
+```bash
+python .agent/runtime/scripts/workflow_core_projection.py --repo-root . --bootstrap-overlay-index --setup-obsidian-restricted-access
+python .agent/runtime/scripts/workflow_core_sync_apply.py --repo-root . --release-ref <release-ref> --setup-obsidian-restricted-access
+```
+
+若你需要自訂輸出目錄或強制覆蓋既有 sample，仍可搭配低階參數 `--obsidian-mount-output-dir` 與 `--force-obsidian-mount-sample`。
+
 這會產生：
 
 - `.devcontainer/devcontainer.obsidian-restricted.jsonc`
