@@ -190,6 +190,35 @@ main
 - 截至 `1ce95e1` 為止，本地 `main` 工作樹已收斂為乾淨；若後續繼續補寫這份 handoff，repo 顯示的差異應只會來自這份 handoff 本身
 - 目前 branch 相對 `origin/main` 仍為 ahead 2，表示這兩個 docs commit 尚未 push
 
+## Obsidian vault mount verification at company
+
+先前一度懷疑公司端打開 Dev Container 後沒有如預期自動掛載 Obsidian vault；後續現場複查後，已確認「mount 本身是正常的」，真正造成誤判的是 Explorer 不會自動顯示不在目前 workspace root 之下的路徑。
+
+### 現場驗證結果
+
+- repo 內目前打開的 Container Configuration File 就是 `.devcontainer/devcontainer.json`
+- container 內 `/obsidian/vault` 實際存在，而且 mount 已生效
+- `/proc/self/mountinfo` 顯示來源路徑就是公司主機上的 `C:\Users\forev\OneDrive\4-管理專用\Jonas\AI生成\程式\ObsidianVault`
+- `ls /obsidian/vault` 已可直接看到 `00-indexes/`、`10-inbox/`、`20-reviewed/`、`30-archives/` 與 `.obsidian/`
+
+### 真正的問題點
+
+- 左側 Explorer 預設只顯示目前 workspace root，也就是 `/workspaces/agent-workflow-template`
+- Obsidian vault 是另一個已掛載但不在 repo 目錄樹下的路徑：`/obsidian/vault`
+- 因此「Explorer 沒看到 vault」不等於「vault 沒有 mount」
+
+### 已採取動作
+
+- 已在公司端確認：若只維持 repo 這個單一 workspace，Explorer 不會自動顯示 `/obsidian/vault` 這種 workspace root 之外的掛載路徑
+- 為了讓目前這個 repo workspace 的左側 Explorer 直接看得到 vault，已在 repo root 建立本機 symlink：`obsidian-vault -> /obsidian/vault`
+- 這個 symlink 只用來暴露已掛載的 vault 給目前 Explorer 使用，不是正式 workflow 契約，也不是要提交的 repo 內容
+- 該 symlink 已加入本機 `.git/info/exclude`，避免污染 git status
+
+### 後續真正要處理的事
+
+- 目前 full-vault mount 雖可用，但設定仍是 maintainer-local 的硬編碼 host path：`source=${localEnv:USERPROFILE}/OneDrive/4-管理專用/Jonas/AI生成/程式/ObsidianVault,target=/obsidian/vault,type=bind`
+- 這個設計對單一 maintainer 可用，但跨機可攜性仍差；若後續要正式收斂，仍建議改成由本機環境變數或本機 override 提供 host path，而不是直接硬編碼在 repo 內
+
 ## Follow-up issue discovered after this handoff draft
 
 在這份 handoff 草稿完成後，後續實際已經把當時那批 Obsidian / triage / reviewed-sync / gate 變更提交並 push 到 `main`：
