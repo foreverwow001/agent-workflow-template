@@ -43,9 +43,11 @@ main
 
 也就是說，上一份 handoff 當時掛著的 bootstrap / dependency hardening follow-up，現在已不再是待辦；它已經被提交、測試，且目前 `origin/main` 與本地 `main` 一致。
 
-## Current uncommitted batch
+## Historical uncommitted batch in original draft
 
-目前真正還沒提交的是一批新的 Obsidian / triage / reviewed-sync 工作，範圍如下：
+以下內容描述的是這份 handoff 最初起草當下，當時仍未提交的那一批 Obsidian / triage / reviewed-sync 工作。
+
+這一整批後續已提交並 push 為 `0f9bef3 feat: add obsidian triage and reviewed sync tooling`；保留這段的目的，是讓接手者知道原始 draft 當時觀察到的工作範圍。
 
 ### 1. Obsidian mount and governance
 
@@ -129,9 +131,11 @@ main
 - 啟動階段不得掃 `10-inbox/reviewed-sync-candidates/`、`30-archives/` 與其他未 allow-list 的 vault 路徑
 - `10-inbox/pending-review-notes/` 不屬於啟動前置閱讀，只在 capture / triage 命中時才後續 read / write
 
-## Files currently changed but not yet committed
+## Historical file snapshot in original draft
 
-### Modified tracked files
+以下檔案清單同樣是 handoff 原始 draft 起草時的工作樹快照，不代表目前 repo 仍處於未提交狀態。
+
+### Modified tracked files in original draft
 
 - `.agent/PORTABLE_WORKFLOW.md`
 - `.agent/roles/coordinator.md`
@@ -150,7 +154,7 @@ main
 - `maintainers/chat/README.md`
 - `tests/test_dev_entry_workflow_contract.py`
 
-### Untracked new files
+### Untracked new files in original draft
 
 - `.agent/roles/engineer_pending_review_recorder.md`
 - `.agent/roles/qa_pending_review_recorder.md`
@@ -169,20 +173,22 @@ main
 
 - 上一份 handoff 中列為未完成的 bootstrap / dependency hardening，後續已完成 commit、測試與 push；它不是目前待辦。
 - `main` 自上一份 handoff 後新增 4 個已提交 commit：`f268b73`、`a90a4f2`、`bd5d2d1`、`5ccf352`。
-- 目前 working tree 沒有 staged changes；所有這批 Obsidian / triage / reviewed-sync 變更都尚未 commit。
-- `pending-review-recorder.py`、`reviewed_sync_manager.py` 與對應測試檔目前 editor diagnostics 為乾淨。
-- focused tests 已通過：
+- handoff 原始 draft 起草當時，這批 Obsidian / triage / reviewed-sync 變更尚未 commit；該狀態後續已被 `0f9bef3` 取代，不再是目前狀態。
+- `pending-review-recorder.py`、`reviewed_sync_manager.py` 與對應測試檔在原始 draft 驗證階段 editor diagnostics 為乾淨。
+- 原始 draft 階段的 focused tests 已通過：
   - `./.venv/bin/python -m unittest tests.test_pending_review_recorder_skill tests.test_reviewed_sync_manager_skill tests.test_dev_entry_workflow_contract`
   - 結果：`Ran 14 tests in 0.109s` / `OK`
+- 目前功能批次已在 `origin/main`：`0f9bef3 feat: add obsidian triage and reviewed sync tooling`
+- 目前 handoff 補充已另有兩個本地 docs commit：`62dab22 docs: update obsidian sync handoff follow-up` 與 `1ce95e1 docs: finalize obsidian sync handoff resolution`
 
 ## Current stage
 
-- 已完成狀態分析與 focused 驗證
-- 目前這批未提交工作已具備可提交狀態
-- 下一個立即動作應是：
-  1. 建立本 handoff
-  2. 將目前 Obsidian / triage / reviewed-sync / gate 變更 commit
-  3. push 到 `origin/main`
+- 公司端 VS Code 目前已無 dirty state / Source Control 異常；先前那批混合 staged/unstaged 狀態已確認是本地 index/worktree 問題，且已收斂
+- 功能批次已完成提交並位於 `origin/main`：`0f9bef3 feat: add obsidian triage and reviewed sync tooling`
+- dirty state / index 問題已完成診斷與收斂，結論已寫入本 handoff
+- handoff 補充本身已再新增 2 個本地 docs commit：`62dab22`、`1ce95e1`
+- 截至 `1ce95e1` 為止，本地 `main` 工作樹已收斂為乾淨；若後續繼續補寫這份 handoff，repo 顯示的差異應只會來自這份 handoff 本身
+- 目前 branch 相對 `origin/main` 仍為 ahead 2，表示這兩個 docs commit 尚未 push
 
 ## Follow-up issue discovered after this handoff draft
 
@@ -270,6 +276,7 @@ main
 - 重新 stage 之後，原本混在一起的 staged 整批刪除與 unstaged 回填直接收斂掉
 - staged diff 最後只剩這份 handoff 的 follow-up 補充，不再有 Obsidian / pending-review / reviewed-sync 那批功能檔案的實質差異
 - 這代表先前看到的 `MM`、staged `D`、`??` 混合狀態，核心問題確實是 index/worktree 疊出的本地異常狀態，不是遠端缺 commit
+- 公司端後續重新打開 VS Code / Source Control 時，已不再出現那批假的混合 dirty state
 
 ### 被證實與未被證實的假說
 
@@ -286,11 +293,12 @@ main
 
 ### 最後收尾動作
 
-在重新 stage 後，唯一剩下的真實變更是 handoff follow-up 本身，因此後續只需要把這份 handoff 更新提交即可：
+在重新 stage 後，唯一剩下的真實變更是 handoff follow-up 本身，因此後續實際分成兩次 docs 提交完成收尾：
 
 - `62dab22 docs: update obsidian sync handoff follow-up`
+- `1ce95e1 docs: finalize obsidian sync handoff resolution`
 
-這個 commit 之後，本地 `main` 工作樹已恢復乾淨；若尚未 push，狀態應是本地 `main` 相對 `origin/main` ahead 1。
+目前這兩個 docs commit 都仍是本地提交；因此截至這份 handoff 的最終版狀態，本地 `main` 工作樹已乾淨，但相對 `origin/main` 為 ahead 2。
 
 ## What was rejected or intentionally constrained
 
@@ -303,16 +311,17 @@ main
 
 若到公司後要延續這條線，建議優先順序如下：
 
-1. 先決定 downstream 專用 Obsidian mount 方案要不要落成更正式的 Dev Container / generator contract
-2. 若要讓 downstream bootstrap automation 支援 Obsidian access，優先做 restricted partial-vault profile，而不是 export full-vault config
-3. 視需要再補更正式的 regression：
+1. 先決定要不要把目前本地的 2 個 handoff docs commit（`62dab22`、`1ce95e1`）push 到 `origin/main`
+2. 再決定 downstream 專用 Obsidian mount 方案要不要落成更正式的 Dev Container / generator contract
+3. 若要讓 downstream bootstrap automation 支援 Obsidian access，優先做 restricted partial-vault profile，而不是 export full-vault config
+4. 視需要再補更正式的 regression：
    - downstream restricted mount contract
    - pending-review-recorder CLI payload edge cases
    - reviewed-sync-manager promotion / archive edge cases
 
 ## Next exact prompt
 
-請先讀 `maintainers/chat/handoff/2026-03-22-obsidian-sync-and-triage-handoff.md`，特別是 `Resolution at company` 這一節。公司端的 dirty state 已確認是 index/worktree 混合狀態，並已透過重新 stage 目前 worktree 收斂回真實差異；`0f9bef3` 不是漏 push。下一步不要再花時間追這次 dirty tree，而是直接延續未完成的產品化工作：優先做 downstream restricted Obsidian mount contract / generator 設計，或補 recorder / reviewed-sync / intake gate 的 regression coverage。若未來再次看到類似 staged 刪除加 unstaged 回填的混合狀態，先用 `git add -A` 重新收斂目前 worktree，再判斷真實 diff 面。
+請先讀 `maintainers/chat/handoff/2026-03-22-obsidian-sync-and-triage-handoff.md`，特別是 `Resolution at company` 與 `Current stage`。先注意目前本地 `main` 相對 `origin/main` 仍有兩個尚未 push 的 docs commit：`62dab22` 與 `1ce95e1`。若你要讓 handoff 與遠端同步，先決定是否 push 這兩個 docs commit；之後就不要再花時間重追這次 dirty tree，而是直接延續未完成的產品化工作：優先做 downstream restricted Obsidian mount contract / generator 設計，或補 recorder / reviewed-sync / intake gate 的 regression coverage。若未來再次看到類似 staged 刪除加 unstaged 回填的混合狀態，先用 `git add -A` 重新收斂目前 worktree，再判斷真實 diff 面。
 
 ## Risks
 
@@ -327,10 +336,11 @@ main
 ## Verification status
 
 - 已驗證：上一份 handoff 之後新增的 4 個 commit 已在 `main`，且 `origin/main` 與本地對齊。
-- 已驗證：目前未提交的 Obsidian / triage / reviewed-sync / gate 變更 focused tests 通過，結果為 `14 tests OK`。
-- 已驗證：目前關鍵新 script 與測試檔無 editor diagnostics。
+- 已驗證：原始 draft 階段，當時未提交的 Obsidian / triage / reviewed-sync / gate 變更 focused tests 通過，結果為 `14 tests OK`。
+- 已驗證：原始 draft 階段，當時關鍵新 script 與測試檔無 editor diagnostics。
 - 後續另已驗證過一次：Obsidian / triage / reviewed-sync 那批變更曾成功 commit / push 為 `0f9bef3 feat: add obsidian triage and reviewed sync tooling`，而且當時本地 `HEAD` 與 `origin/main` 相同。
 - 後續另已驗證過一次：devcontainer rebuild 路徑本身沒有直接修改 git state 的命令；dirty tree 較像是公司端本地 workspace / index 殘留狀態重新浮現。
 - 已驗證：重新執行 `git add -A` 後，混合的 staged deletion / unstaged 回填已收斂，只剩 handoff follow-up 本身是真實差異。
 - 已完成：handoff follow-up 已提交為 `62dab22 docs: update obsidian sync handoff follow-up`。
-- 目前狀態：本地 `main` 工作樹乾淨；若尚未 push，則相對 `origin/main` ahead 1。
+- 已完成：handoff 最終收斂版已提交為 `1ce95e1 docs: finalize obsidian sync handoff resolution`。
+- 目前狀態：公司端 VS Code 已無 dirty-state 異常；截至 `1ce95e1` 時本地 `main` 工作樹乾淨，若尚未 push 則相對 `origin/main` ahead 2；後續若再看到 repo 差異，應先區分是不是這份 handoff 自身的新補寫。
