@@ -20,6 +20,7 @@
 `post_create.sh` 會處理：
 
 - 先呼叫 `.agent/runtime/scripts/install_workflow_prereqs.sh`，檢查 workflow 最小依賴
+- 若偵測到 `OBSIDIAN_VAULT_ROOT` 對應的 mount 存在，會在 repo root 自動建立 `obsidian-vault -> <vault-root>` symlink，讓左側 Explorer 在 single-root workspace 內直接看得到 vault
 - 建立 `.venv`
 - 安裝固定版 `uv`
 - 若 repo 內存在依賴清單，則安裝依賴
@@ -27,6 +28,22 @@
 - 檢查 `codex` / `copilot` CLI 是否存在；若缺少且環境允許，會自動用 npm 全域安裝
 
 > 這個 template 本身不強制依賴 `uv.lock` 或 `requirements*.txt`。若你之後把 template 套用到自己的專案，再把自己的依賴清單加入版控即可。
+
+### 2.1 Obsidian vault 在 Explorer 的顯示方式
+
+目前 template repo 的 maintainer-local Dev Container 仍維持把完整 vault 掛到 `/obsidian/vault`。
+
+另外，`post_create.sh` 現在會自動在 repo root 建立：
+
+```bash
+obsidian-vault -> /obsidian/vault
+```
+
+目的只有一個：讓目前這個 repo 的單一 workspace root 直接暴露 vault 給 Explorer 使用。
+
+這不是 multi-root workspace，也不是額外把 `/obsidian/vault` 加成第二個 workspace folder；VS Code 看到的仍然只有 repo 這一個 root。
+
+若這台機器沒有設定 Obsidian mount，腳本會略過這一步，不會因為缺少 vault 而讓 bootstrap 失敗。
 
 ## 3. 可選加速方式：GHCR 預建 image
 

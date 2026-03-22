@@ -5,7 +5,7 @@ tests/test_bootstrap_hardening_regression.py
 用途：驗證 bootstrap hardening shell scripts 的最低契約不會退化
 職責：
   - 驗證 install_workflow_prereqs.sh 的 check-only 與 ready path
-  - 驗證 post_create.sh 仍會串接 prereq、Python bootstrap 與 terminal tooling
+    - 驗證 post_create.sh 仍會串接 prereq、Obsidian single-root exposure、Python bootstrap 與 terminal tooling
   - 驗證 install_terminal_tooling.sh 仍會自動安裝缺失 CLI 並建立 local extension symlink
 ===========================================
 """
@@ -120,6 +120,8 @@ class BootstrapHardeningRegressionTest(unittest.TestCase):
                 ".agent/runtime/scripts/devcontainer/post_create.sh",
             )
             log_path = repo_root / "post-create.log"
+            vault_root = repo_root / "mounted-vault"
+            vault_root.mkdir(parents=True, exist_ok=True)
 
             write_executable(
                 repo_root / ".agent/runtime/scripts/install_workflow_prereqs.sh",
@@ -164,18 +166,25 @@ class BootstrapHardeningRegressionTest(unittest.TestCase):
                 "HOME": str(repo_root / "home"),
                 "PATH": f"{fake_bin}:/usr/bin:/bin",
                 "POST_CREATE_LOG": str(log_path),
+                "OBSIDIAN_VAULT_ROOT": str(vault_root),
                 "UV_VERSION": "0.5.24",
             }
 
             result = run_script(script_path, repo_root, env)
             log_lines = log_path.read_text(encoding="utf-8").splitlines()
+            obsidian_link = repo_root / "obsidian-vault"
+            obsidian_link_exists = obsidian_link.is_symlink()
+            obsidian_link_target = obsidian_link.resolve() if obsidian_link_exists else None
 
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(log_lines[0], "prereqs")
+        self.assertTrue(obsidian_link_exists)
+        self.assertEqual(obsidian_link_target, vault_root)
         self.assertTrue(log_lines[1].startswith("create_venv:"), log_lines)
         self.assertIn("venv_python:-m pip install --upgrade pip", log_lines)
         self.assertIn("venv_python:-m pip install --no-cache-dir uv==0.5.24", log_lines)
         self.assertEqual(log_lines[-1], "tooling")
+        self.assertIn("Linked obsidian-vault ->", result.stdout)
         self.assertIn("No Python dependency manifest found; skipping dependency install.", result.stdout)
 
     def test_install_terminal_tooling_auto_installs_missing_clis_and_links_extensions(self) -> None:

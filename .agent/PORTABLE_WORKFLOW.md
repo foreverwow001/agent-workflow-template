@@ -78,6 +78,8 @@ new-project/
 
 另外，curated core 現在也會帶出 `project_maintainers/chat/` 與 `project_maintainers/improvement_candidates/` skeleton，讓新專案一開始就具備自己的 handoff / archive / candidate 落點。這組 skeleton 是 downstream project-local supporting surface，不是 authoritative workflow 規則來源。
 
+補充：template repo 自身的 maintainer-local Dev Container 目前可把完整 Obsidian vault 掛到 `/obsidian/vault`，並在 repo root 自動暴露 `obsidian-vault -> /obsidian/vault` 這個 single-root Explorer 入口。這只是 template repo 的工作便利層，不是 multi-root workspace，也不是 downstream repo 的預設 contract。
+
 ### Step 0: 先確認最小依賴
 
 下游 repo 最小建議依賴如下：
