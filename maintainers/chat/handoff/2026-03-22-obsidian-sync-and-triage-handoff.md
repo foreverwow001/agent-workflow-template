@@ -190,9 +190,9 @@ main
 - template repo 的 maintainer-local single-root Explorer exposure 已正式產品化：`post_create.sh` 會在 mount 存在時自動建立 `obsidian-vault -> /obsidian/vault`
 - downstream restricted mount generator 與 opt-in bootstrap / sync apply integration 之後，active docs 已再往前收斂成 operator-facing alias 與 one-click wrapper command：`workflow_core_sync_update.py`
 - 這批 one-click wrapper / active docs / regression follow-up 已再提交並推上 `main`：`01dd164 feat: add one-click workflow core sync`
-- 目前 worktree 已完成但尚未提交的新 follow-up：downstream default writable inbox zone `10-inbox/pending-review-notes/`、三份 Obsidian 文件說法統一、one-click wrapper failure path，以及 `pending-review-recorder` / `reviewed-sync-manager` 更深一層 merge 邊界 regression
-- `reviewed-sync-candidates/` 與 `30-archives/` 仍不屬於 downstream default mount
-- 本地 `main` 的 commit history 仍與 `origin/main` 對齊，但上述最新 follow-up 目前只存在於 worktree
+- 這批 downstream mount contract / docs unify / failure-path regression follow-up 已再提交並推上 `main`：`10266e3 feat: default downstream obsidian inbox zone`
+- downstream restricted consumer profile 已確認：`10-inbox/pending-review-notes/` 是 default writable mount，但只在 capture / triage 命中時 on-demand read；`10-inbox/reviewed-sync-candidates/` 與 `30-archives/` 對 downstream 都不屬於可讀可寫面
+- 本地 `main` 的 commit history 仍與 `origin/main` 對齊，沒有這批 follow-up 的殘留 worktree 差異
 
 ## Obsidian vault mount verification at company
 
@@ -350,9 +350,9 @@ main
 
 若到公司後要延續這條線，建議優先順序如下：
 
-1. 把目前 worktree 內尚未提交的 writable inbox zone / docs unify / failure-path regression follow-up 收斂成 commit，避免 handoff 再次落後真實狀態
-2. 持續維持 downstream 的 Obsidian access surface 為 single-root repo-local shape，並把 writable inbox zone 固定成 `10-inbox/pending-review-notes/`，避免文件再次分裂成多套說法
-3. 若未來要額外開放 candidate drafting，應把 `10-inbox/reviewed-sync-candidates/` 視為明確 opt-in 的 extra writable zone，而不是 downstream default
+1. 持續維持 downstream 的 Obsidian access surface 為 single-root repo-local shape，並把 `10-inbox/pending-review-notes/` 固定為 default writable mount + on-demand read，避免文件再次分裂成多套說法
+2. 維持 `10-inbox/reviewed-sync-candidates/` 在 downstream 的 no-read / no-write 邊界，不要再把它描述成可選 writable zone
+3. 若未來真的需要 downstream candidate drafting，必須先重新定義 consumer profile 與 gate 契約，而不是直接沿用目前 restricted contract
 4. 視需要再補更正式的 regression：
   - one-click wrapper 更多 remote fetch / verify fail lane
   - pending-review-recorder 更大規模 dedupe / merge 邊界
@@ -360,7 +360,7 @@ main
 
 ## Next exact prompt
 
-請先讀 `maintainers/chat/handoff/2026-03-22-obsidian-sync-and-triage-handoff.md`，特別是 `Current stage` 與 `Immediate next work after this commit`。目前 `origin/main` 已包含 handoff follow-up、vault visibility 補充、single-root Explorer exposure、downstream restricted mount generator、opt-in bootstrap / sync apply integration，以及 `01dd164 feat: add one-click workflow core sync`。另外目前 worktree 已完成但尚未提交的 follow-up，是把 downstream default restricted profile 正式擴成含 `10-inbox/pending-review-notes/` writable inbox zone，並補齊文件統一與新的 failure / merge regressions；`reviewed-sync-candidates/` 仍維持非預設 mount。若要延續這條線，優先判斷這批本地 follow-up 是否直接 commit / push，再處理剩餘的可攜性與更深層 regression。若未來再次看到 staged 刪除加 unstaged 回填的混合狀態，先用 `git add -A` 重新收斂目前 worktree，再判斷真實 diff 面。
+請先讀 `maintainers/chat/handoff/2026-03-22-obsidian-sync-and-triage-handoff.md`，特別是 `Current stage` 與 `Immediate next work after this commit`。目前 `origin/main` 已包含 handoff follow-up、vault visibility 補充、single-root Explorer exposure、downstream restricted mount generator、opt-in bootstrap / sync apply integration、`01dd164 feat: add one-click workflow core sync`，以及 `10266e3 feat: default downstream obsidian inbox zone`。目前 downstream restricted consumer profile 已確認：`10-inbox/pending-review-notes/` 是 default writable mount，但只在 capture / triage 命中時 on-demand read；`10-inbox/reviewed-sync-candidates/` 與 `30-archives/` 對 downstream 一律不讀不寫。若要延續這條線，優先處理剩餘的可攜性與更深層 regression，而不是再回頭調整已收斂的 downstream mount 說法。若未來再次看到 staged 刪除加 unstaged 回填的混合狀態，先用 `git add -A` 重新收斂目前 worktree，再判斷真實 diff 面。
 
 ## Risks
 
@@ -387,6 +387,7 @@ main
 - 已完成：vault visibility 補充已提交為 `2f3cd5d docs: add obsidian vault mount handoff note`。
 - 已驗證：新增的 one-click wrapper command `workflow_core_sync_update.py` 已能以單一入口串接 `sync stage -> sync apply -> sync verify`，並可在預設 staging root rerun 時自動覆蓋舊的 generated staging tree。
 - 已完成：one-click wrapper / active docs / regression follow-up 已提交為 `01dd164 feat: add one-click workflow core sync`。
-- 已驗證：目前 worktree 內的 downstream restricted profile generator 已預設帶出 `10-inbox/pending-review-notes/` writable inbox zone，同時仍不預設 mount `10-inbox/reviewed-sync-candidates/` 與 `30-archives/`。
-- 已驗證：目前 worktree 內的 focused suite `pytest -q tests/test_workflow_core_wrapper_commands.py tests/test_workflow_core_export_materialize.py tests/test_workflow_core_obsidian_restricted_mount.py tests/test_pending_review_recorder_skill.py tests/test_reviewed_sync_manager_skill.py` 通過，結果為 `41 passed`。
-- 目前狀態：git history 仍與 `origin/main` 對齊，但 worktree 另有尚未提交的 mount contract / docs unify / regression follow-up；若後續再看到 repo 差異，應先區分是不是這一批本地 follow-up。
+- 已完成：downstream writable inbox zone / docs unify / failure-path regression follow-up 已提交為 `10266e3 feat: default downstream obsidian inbox zone`。
+- 已驗證：目前 `origin/main` 上的 downstream restricted profile generator 已帶出 `10-inbox/pending-review-notes/` default writable mount，且這個區域只在 capture / triage 命中時 on-demand read；`10-inbox/reviewed-sync-candidates/` 與 `30-archives/` 對 downstream 不提供 read 或 write。
+- 已驗證：focused suite `pytest -q tests/test_workflow_core_wrapper_commands.py tests/test_workflow_core_export_materialize.py tests/test_workflow_core_obsidian_restricted_mount.py tests/test_pending_review_recorder_skill.py tests/test_reviewed_sync_manager_skill.py` 通過，結果為 `41 passed`。
+- 目前狀態：git history 仍與 `origin/main` 對齊；若後續再看到 repo 差異，應先區分是不是新的可攜性 / regression follow-up，而不是這批已提交的 downstream mount 契約收斂。

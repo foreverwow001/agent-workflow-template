@@ -45,6 +45,8 @@ class WorkflowCoreObsidianRestrictedMountTest(unittest.TestCase):
         self.assertIn("obsidian-knowledge/10-inbox/pending-review-notes", snippet)
         self.assertIn("OBSIDIAN_PENDING_REVIEW_ROOT", snippet)
         self.assertIn("writable inbox zone", guide)
+        self.assertIn("on-demand read", guide)
+        self.assertIn("不應提供 read 或 write", guide)
         self.assertNotIn("30-archives", snippet)
         self.assertIn("single-root workspace", guide)
         self.assertIn("這不是 multi-root workspace", guide)

@@ -129,7 +129,7 @@ Obsidian 不適合扮演：
 - 同步方向：以 repo -> Obsidian 單向同步為主
 - 同步 gate：必須先經人工 review
 - Dev Container 讀取路徑：優先使用受控 mount，把已核准區域提供給 agent 讀取
-- Dev Container 寫入路徑：只在 user 明確要求時，才開放指定 writable zone
+- Dev Container 寫入路徑：downstream default 只保留 `10-inbox/pending-review-notes/` 這個 writable inbox zone，且實際讀取仍限於 capture / triage 命中時的 on-demand read
 
 ### 8.2 最小流程
 
@@ -167,7 +167,8 @@ Obsidian 不適合扮演：
 
 - 以 read-only mount 提供 `00-indexes/` 與 `20-reviewed/` 等已核准區域
 - downstream default 正式提供單一、受控的 writable inbox zone：`10-inbox/pending-review-notes/`
-- `10-inbox/reviewed-sync-candidates/` 只在明確需要 candidate drafting 時，才額外 opt-in 開放
+- `10-inbox/pending-review-notes/` 不屬於啟動前置閱讀面，只在 capture / triage 命中時 on-demand read
+- downstream project repo 不提供 `10-inbox/reviewed-sync-candidates/` 的 read 或 write
 - downstream project repo 不要把整個 vault 以可寫方式掛進 container
 - 不要把未審核區、archive、私人原始材料預設暴露給 agent
 

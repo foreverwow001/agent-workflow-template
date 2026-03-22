@@ -54,7 +54,7 @@ def render_mount_guide() -> str:
 ## 目的
 
 - 讓 downstream workflow 在需要時可讀取 Obsidian 的 `00-indexes/` 與最小必要 `20-reviewed/`
-- 讓 downstream workflow 在 capture / triage 命中時可寫入 `10-inbox/pending-review-notes/`，作為正式支援的 writable inbox zone
+- 讓 downstream workflow 以 `10-inbox/pending-review-notes/` 作為 default writable mount，並僅在 capture / triage 命中時對這個區域做 on-demand read
 - 保持 single-root workspace；Explorer 看到的 access surface 會落在 repo 內的 `obsidian-knowledge/`
 - 避免把 full vault、`10-inbox/reviewed-sync-candidates/`、`30-archives/` 帶進 downstream 預設工作面
 
@@ -70,7 +70,7 @@ def render_mount_guide() -> str:
 - `obsidian-knowledge/20-reviewed/`
 - `obsidian-knowledge/10-inbox/pending-review-notes/`
 
-其中 `10-inbox/pending-review-notes/` 是 downstream default 的 writable inbox zone，但不屬於啟動前置閱讀面。
+其中 `10-inbox/pending-review-notes/` 是 downstream default 的 writable inbox zone，但不屬於啟動前置閱讀面，只在 capture / triage 命中時 on-demand read。
 
 這不是 multi-root workspace；VS Code 仍只打開 downstream repo 這一個 root。
 
@@ -79,6 +79,8 @@ def render_mount_guide() -> str:
 - `10-inbox/reviewed-sync-candidates/`
 - `30-archives/`
 - 任何 full-vault mount
+
+對 downstream restricted consumer profile 而言，`10-inbox/reviewed-sync-candidates/` 不應提供 read 或 write。
 
 ## Git 建議
 
