@@ -81,6 +81,11 @@ PACKAGED_SKILL_ENTRIES = {
         "entry_doc": "SKILL.md",
         "script_rel": "scripts/manifest_updater.py",
     },
+    "pending_review_recorder": {
+        "package_dir": "pending-review-recorder",
+        "entry_doc": "SKILL.md",
+        "script_rel": "scripts/pending_review_recorder.py",
+    },
 }
 
 

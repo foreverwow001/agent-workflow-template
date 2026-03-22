@@ -23,10 +23,16 @@
 
 ### Active Supporting Docs
 
-目前 active chat 區不再保留額外 dated supporting docs；core / overlay 現行 truth 已收斂到下列兩個面：
+目前 active chat 區只保留少量仍具導航價值的 dated supporting docs；core / overlay 現行 truth 已收斂到下列兩個面：
 
 - repo root `core_ownership_manifest.yml`
 - `handoff/core-overlay/` 內的 active SOP / checklist / CLI spec / validation records
+- `2026-03-20-project-maintainers-obsidian-sync-policy.md`
+  - 說明 `project_maintainers/` 與 Obsidian 的 reviewed-sync 邊界
+- `2026-03-20-obsidian-reviewed-sync-checklist.md`
+  - 定義 Obsidian 未設定前的前置作業與 reviewed-sync checklist
+- `2026-03-20-obsidian-vault-structure-and-frontmatter.md`
+  - 提供 vault 資料夾結構與 note frontmatter 範本
 
 > MT-003 `/dev` workflow 文件收斂工作已正式結案；其現況流程、friction 地圖、rotation patch 提案與關帳快照，現已存入 `maintainers/archive/2026-03-18-workflow-optimization-plan.md`，active chat 區不再保留對應 supporting doc。
 

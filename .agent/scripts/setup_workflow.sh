@@ -71,9 +71,12 @@ echo -e "${GREEN}  ✅ Workflow 檔案複製完成${NC}"
 echo -e "${BLUE}[3/6] 複製 Roles 檔案...${NC}"
 cp "$SOURCE/roles/planner.md" "$TARGET/.agent/roles/"
 cp "$SOURCE/roles/engineer.md" "$TARGET/.agent/roles/"
+cp "$SOURCE/roles/engineer_pending_review_recorder.md" "$TARGET/.agent/roles/"
 cp "$SOURCE/roles/qa.md" "$TARGET/.agent/roles/"
+cp "$SOURCE/roles/qa_pending_review_recorder.md" "$TARGET/.agent/roles/"
 cp "$SOURCE/roles/domain_expert.md" "$TARGET/.agent/roles/"
 cp "$SOURCE/roles/security.md" "$TARGET/.agent/roles/"
+cp "$SOURCE/roles/security_pending_review_recorder.md" "$TARGET/.agent/roles/"
 echo -e "${GREEN}  ✅ Roles 檔案複製完成${NC}"
 
 # Step 4: 複製 Skills 檔案

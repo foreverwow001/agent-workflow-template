@@ -15,6 +15,22 @@ description: 艾薇品管員 (QA) - 負責代碼審查與資安檢查
 - [ ] **代碼品質**：是否有過度複雜的函式？是否做了適當的錯誤處理 (Try-Except)？
 - [ ] **Cross-QA 規則**：QA 工具是否與 Executor 不同？
 
+## 條件式 Triage 記錄（命中才啟用）
+
+若 QA 過程命中以下任一情況，且工作區允許寫入 `pending-review-notes`，必須加讀：
+
+- `.agent/skills/pending-review-recorder/SKILL.md`
+- `.agent/roles/qa_pending_review_recorder.md`
+
+命中條件包含：
+
+- 缺陷已可重現，但 root cause 與 owner 尚未定
+- flaky failure 在同一輪驗證中重複出現
+- 驗收標準不完整，已影響 pass / fail 判定
+- user 明確要求保留這次驗證問題
+
+若只是單次且無法重現的失敗、操作失誤、或沒有 evidence 的主觀懷疑，禁止啟用這條路徑。
+
 ## 審查完成輸出格式（Idx-030）
 
 審查完成後，必須在終端精確輸出以下 5 行：
@@ -163,6 +179,7 @@ QA_RESULT=PASS
 |------|------|----------|
 | **代碼審查** | 自動檢查 security smell、語法、檔案長度、中文註釋與基本 maintainability | `python .agent/skills/code-reviewer/scripts/code_reviewer.py <file_path|directory|diff>` 或 `python .agent/skills/code-reviewer/scripts/code_reviewer.py git diff --staged|--cached|<base>..<head> .` |
 | **測試執行** | 執行 pytest 驗證代碼邏輯 | `python .agent/skills/test-runner/scripts/test_runner.py [test_path]` |
+| **Pending Review Recorder** | 建立或更新 `pending-review-notes` triage 記錄 | `python .agent/skills/pending-review-recorder/scripts/pending_review_recorder.py --notes-dir <pending-review-notes-dir> --payload-file <event.json>` |
 
 ### 必做命令
 
@@ -192,6 +209,7 @@ python .agent/skills/code-reviewer/scripts/code_reviewer.py git diff <base>..<he
 - 若是多檔或整個模組：優先跑目錄或 git diff 模式。
 - 若變更來自 staged/cached 工作區：優先跑 `git diff --staged` 或 `git diff --cached`。
 - 若專案有單元測試，**必須**再執行 `python .agent/skills/test-runner/scripts/test_runner.py [test_path]` 驗證。
+- 若 QA 事件命中 triage 記錄條件，**必須**加讀 `.agent/skills/pending-review-recorder/SKILL.md` 與 `.agent/roles/qa_pending_review_recorder.md`，再決定 `create / update / skip`。
 - 詳細說明請參閱 [`.agent/skills/INDEX.md`](../skills/INDEX.md)。
 
 ---

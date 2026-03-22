@@ -8,7 +8,8 @@
   "remoteEnv": {
     "OAI_API_KEY": "${localEnv:OAI_API_KEY}",
     "OAI_BASE_URL": "${localEnv:OAI_BASE_URL}",
-    "OPENROUTER_API_KEY": "${localEnv:OPENROUTER_API_KEY}"
+    "OPENROUTER_API_KEY": "${localEnv:OPENROUTER_API_KEY}",
+    "OBSIDIAN_VAULT_ROOT": "/obsidian/vault"
   },
   "customizations": {
     "vscode": {
@@ -56,6 +57,9 @@
   },
   "remoteUser": "vscode",
   "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+  "mounts": [
+    "source=${localEnv:USERPROFILE}/OneDrive/4-管理專用/Jonas/AI生成/程式/ObsidianVault,target=/obsidian/vault,type=bind"
+  ],
   "postCreateCommand": "bash .agent/runtime/scripts/devcontainer/post_create.sh",
   "runArgs": [
     "--add-host=host.docker.internal:host-gateway"

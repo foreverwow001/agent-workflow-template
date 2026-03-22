@@ -28,6 +28,7 @@
 | `plan-validator` | Plan 格式驗證 | 閱讀 `.agent/skills/plan-validator/SKILL.md`；執行 `python .agent/skills/plan-validator/scripts/plan_validator.py <plan_file_path>` |
 | `git-stats-reporter` | Git 變更統計與 Gate 觸發 | 閱讀 `.agent/skills/git-stats-reporter/SKILL.md`；執行 `python .agent/skills/git-stats-reporter/scripts/git_stats_reporter.py <diff_file_path>` |
 | `manifest-updater` | Skills manifest 同步 | 閱讀 `.agent/skills/manifest-updater/SKILL.md`；執行 `python .agent/skills/manifest-updater/scripts/manifest_updater.py --check` / `--sync` |
+| `pending-review-recorder` | triage 事件記錄、去重與 pending-review note 草案 | 閱讀 `.agent/skills/pending-review-recorder/SKILL.md` |
 | `skills-evaluator` | Skills 執行統計與回饋 | 閱讀 `.agent/skills/skills-evaluator/SKILL.md`；執行 `python .agent/skills/skills-evaluator/scripts/skills_evaluator.py <log_file_path> [--format json|markdown]` |
 | `security-review-helper` | Security Review intake/checklist 輔助 | 閱讀 `.agent/skills/security-review-helper/SKILL.md` |
 | `refactor` | 行為不變的既有程式碼重構 | 閱讀 `.agent/skills/refactor/SKILL.md` |

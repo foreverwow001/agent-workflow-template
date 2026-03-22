@@ -72,6 +72,7 @@ Thumbs.db
 uploaded_media/
 temp/
 tmp/
+obsidian-vault
 maintainers/chat/*.json
 # ---- workflow runtime (template defaults) ----
 # Agent task locks

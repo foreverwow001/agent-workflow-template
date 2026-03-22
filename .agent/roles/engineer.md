@@ -18,6 +18,11 @@ description: 全端工程師 (Engineer) - 負責撰寫程式碼
          - 逐列檢查
          - 任一列命中即載入對應 skill
          - 若同時命中多列，必須全部載入，不可擇一跳過
+     - **條件式 triage 記錄（命中才啟用）**：若實作過程命中以下任一情況，且工作區允許寫入 `pending-review-notes`，必須加讀：
+         - `.agent/skills/pending-review-recorder/SKILL.md`
+         - `.agent/roles/engineer_pending_review_recorder.md`
+         - 命中條件包含：重複失敗且已阻斷實作、必須採用 workaround、同模組反覆出現環境或依賴問題、或 user 明確要求留痕
+         - 若只是開發中的預期紅燈、一次性 typo、或尚未成形的噪音，禁止啟用這條路徑
 3. **撰寫程式碼**：在專案內直接修改/新增檔案，完成可執行的實作。
     - **檔案頭註釋**：每個檔案第一行必須說明用途。
     - **模組化**：單檔控制在 300-500 行，過長須拆分。
@@ -80,6 +85,7 @@ description: 全端工程師 (Engineer) - 負責撰寫程式碼
 | **文件生成** | 從 Python 檔案自動產生 Markdown 文件 | `python .agent/skills/doc-generator/scripts/doc_generator.py <file_path>` |
 | **測試執行** | 執行 pytest 並回報結果 | `python .agent/skills/test-runner/scripts/test_runner.py [test_path]` |
 | **Plan 驗證** | 驗證 Plan 格式是否符合模板 | `python .agent/skills/plan-validator/scripts/plan_validator.py <plan_file_path>` |
+| **Pending Review Recorder** | 建立或更新 `pending-review-notes` triage 記錄 | `python .agent/skills/pending-review-recorder/scripts/pending_review_recorder.py --notes-dir <pending-review-notes-dir> --payload-file <event.json>` |
 | **Refactor** | 既有程式碼的行為不變重構流程 | `cat .agent/skills/refactor/SKILL.md` |
 | **TypeScript Expert** | TypeScript / JavaScript / React / Node 實作標準 | `cat .agent/skills/typescript-expert/SKILL.md` |
 | **Python Expert** | Python correctness / type safety / performance / style 指南 | `cat .agent/skills/python-expert/SKILL.md` |
@@ -90,6 +96,7 @@ description: 全端工程師 (Engineer) - 負責撰寫程式碼
 > - ✅ **實作前（必做）**：直接對照 [engineer_skill_trigger_checklist.md](../workflows/references/engineer_skill_trigger_checklist.md) 決定要載入哪些工程技能。
 > - ✅ **完成代碼後（必做）**：對每個新建/修改的 `.py` 檔案執行 `code-reviewer` canonical script，並將 JSON 輸出交給 Coordinator 寫入 Log 的 `SKILLS_EXECUTION_REPORT`
 > - ✅ **若有測試（必做）**：執行 `test-runner` canonical script 並記錄結果
+> - ✅ **若命中 triage 記錄條件（條件式）**：加讀 `.agent/skills/pending-review-recorder/SKILL.md` 與 `.agent/roles/engineer_pending_review_recorder.md`，再決定 `create / update / skip`
 > - ⚠️ **若 `code-reviewer` 回傳 `status: fail`**：立即停止，修正後重新執行
 > - （可選）Plan 有異常時可先用 `plan-validator` 自我檢查，但最終 Gate 由 Coordinator 控制
 > - 需要產生文件時，使用 `doc-generator` canonical script。

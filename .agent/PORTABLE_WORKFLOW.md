@@ -18,9 +18,12 @@ new-project/
 │   ├── roles/
 │   │   ├── planner.md           ✅ 規劃師（通用）
 │   │   ├── engineer.md          ✅ 工程師（通用）
+│   │   ├── engineer_pending_review_recorder.md  ✅ 工程 triage 記錄 overlay（通用）
 │   │   ├── qa.md                ✅ 品管員（通用）
+│   │   ├── qa_pending_review_recorder.md        ✅ QA triage 記錄 overlay（通用）
 │   │   ├── domain_expert.md     ⚙️ 領域專家（需客製）
-│   │   └── security.md          ✅ 安全審查員（通用）
+│   │   ├── security.md          ✅ 安全審查員（通用）
+│   │   └── security_pending_review_recorder.md  ✅ 安全 triage 記錄 overlay（通用）
 │   ├── skills/
 │   │   ├── INDEX.md             ✅ 技能索引（通用）
 │   │   ├── code-reviewer/       ✅ 代碼審查 skill package（通用）
@@ -32,6 +35,7 @@ new-project/
 │   │   ├── github-explorer/     ✅ 外部技能搜尋/下載 package（通用）
 │   │   ├── skill-converter/     ✅ 外部技能轉換 package（內部 toolchain）
 │   │   ├── manifest-updater/    ✅ manifest 同步 package（通用）
+│   │   ├── pending-review-recorder/ ✅ triage 記錄與 dedupe 規格（通用）
 │   │   ├── _shared/             ✅ shared helper / path resolver
 │   │   ├── explore-cli-tool/    ✅ CLI 探索（通用）
 │   │   └── schemas/             ✅ output schema public path

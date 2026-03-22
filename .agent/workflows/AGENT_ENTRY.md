@@ -130,6 +130,13 @@
 - **Research Gate**：若 Plan 的 `research_required: true` 或依賴檔案變更（`requirements.txt`、`pyproject.toml`、`*requirements*.txt`），必須先補齊 `RESEARCH & ASSUMPTIONS`；未完成不得進入 Engineer。
   - **Coordinator Research Skill Trigger Checklist（authoritative）**：見 [coordinator_research_skill_trigger_checklist.md](./references/coordinator_research_skill_trigger_checklist.md)
   - Coordinator 必須逐列檢查；任一列命中即載入對應 skill；若同時命中多列，必須全部載入
+- **Obsidian Knowledge Intake Gate（downstream / 新專案工作區條件式）**：若目前在 downstream / 新專案工作區執行 workflow，且工作區已配置 Obsidian access surface，Coordinator 在注入 Engineer / Security Reviewer / QA 前必須先完成受控知識檢閱。
+  - 啟動順序固定為：先檢閱 `00-indexes/`，再依索引只讀取最小必要的 `20-reviewed/` 文件
+  - 啟動階段允許讀取的 Obsidian surface 只有：`00-indexes/` 與經索引選出的 `20-reviewed/` 文件
+  - 啟動階段禁止讀寫：`10-inbox/reviewed-sync-candidates/`、`30-archives/`、私人草稿區與其他未列入 allow-list 的 vault 路徑
+  - `10-inbox/pending-review-notes/` 不屬於啟動前置閱讀；只有 user 明確要求處理 capture / triage，或 workflow 命中 `pending-review-notes` recorder 路徑且工作區政策允許時，才可後續 read / write
+  - 若沒有 Obsidian mount、沒有可用索引，或索引中沒有命中本次任務的文件，Coordinator 應記錄為 `none` 後繼續，不得改成整包掃描 vault
+  - Coordinator 必須在 `RESEARCH & ASSUMPTIONS` 或等價執行紀錄中留下：已檢閱的 index 路徑、實際採用的 reviewed 文件路徑，或 `none`
 - **Plan Validator Gate**：必須先執行 `python .agent/skills/plan-validator/scripts/plan_validator.py <plan_file_path>`；若回傳 `status: fail|error`，退回 Planner 修正。
 - **Preflight Gate**：
   - PTY 主路徑：`python .agent/runtime/scripts/vscode/workflow_preflight_check.py --require-pty --allow-pty-cold-start --json`
@@ -181,6 +188,11 @@
 - 僅能依照已核准 Plan 執行
 - 變更應最小化，避免無關改動
 - Coordinator 在注入 Engineer 任務時，**必須**對照 [engineer_skill_trigger_checklist.md](./references/engineer_skill_trigger_checklist.md) 逐列檢查，並附上所有命中的 skill 載入命令；若同時命中多列，必須全部附上，不得擇一省略。
+- 若 Engineer 任務同時命中 pending-review triage 條件，且工作區允許寫入 `pending-review-notes`，Coordinator **必須**額外附上：
+  - `cat .agent/skills/pending-review-recorder/SKILL.md`
+  - `cat .agent/roles/engineer_pending_review_recorder.md`
+  - `python .agent/skills/pending-review-recorder/scripts/pending_review_recorder.py --notes-dir <pending-review-notes-dir> --payload-file <event.json>`
+- 若事件未命中 triage 條件，或工作區不允許寫入 `pending-review-notes`，不得預設注入 recorder 路徑。
 
 9) **Security Review（條件式）**
 - 若 `security_review_required=true`，先進行 Security Review
@@ -188,11 +200,21 @@
 - 若 Security Review 結果為高風險 `FAIL`，不得直接進 QA
 - Security Review 完成後，必須回填：`security_reviewer_tool`、`security_review_start`、`security_review_end`、`security_review_result`、`security_review_conclusion`
 - Coordinator 在注入 Security Reviewer 任務時，**必須**明確附上 helper 命令：`cat .agent/skills/security-review-helper/SKILL.md` 與 `cat .agent/skills/security-review-helper/references/security_checklist.md`；不得只寫「參考 security.md」。
+- 若 Security Review 過程命中 pending-review triage 條件，且工作區允許寫入 `pending-review-notes`，Coordinator **必須**額外附上：
+  - `cat .agent/skills/pending-review-recorder/SKILL.md`
+  - `cat .agent/roles/security_pending_review_recorder.md`
+  - `python .agent/skills/pending-review-recorder/scripts/pending_review_recorder.py --notes-dir <pending-review-notes-dir> --payload-file <event.json>`
+- 若 security evidence 涉及 exploit 細節、敏感 payload、token、secret，Coordinator 不得要求走自動 note writer，應改成人工控管處理。
 
 10) **QA（必須對照 Plan 與硬約束）**
 - QA 必須分級：PASS / PASS WITH RISK / FAIL
 - 若非 PASS：必須指出風險與原因
 - Coordinator 在注入 QA 任務時，**必須**依審查範圍明確附上至少一條 `code-reviewer` canonical script 命令（單檔 / 目錄 / diff / `git diff --staged|--cached|<base>..<head>`）；若專案有測試，也必須一併附上 `test-runner` 命令。
+- 若 QA 過程命中 pending-review triage 條件，且工作區允許寫入 `pending-review-notes`，Coordinator **必須**額外附上：
+  - `cat .agent/skills/pending-review-recorder/SKILL.md`
+  - `cat .agent/roles/qa_pending_review_recorder.md`
+  - `python .agent/skills/pending-review-recorder/scripts/pending_review_recorder.py --notes-dir <pending-review-notes-dir> --payload-file <event.json>`
+- 若 QA 事件只是單次且不可重現的失敗、操作失誤或無 evidence 懷疑，不得預設注入 recorder 路徑。
 
 11) **Log（QA 後必寫）**
 - QA 結束後必須產出 log

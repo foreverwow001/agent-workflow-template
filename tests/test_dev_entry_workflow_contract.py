@@ -50,6 +50,12 @@ class DevEntryWorkflowContractTest(unittest.TestCase):
         self.assertLess(mode_selection_index, plan_index)
         self.assertIn("lightweight-direct-edit", self.entry)
 
+    def test_entry_requires_downstream_obsidian_index_first_gate(self) -> None:
+        self.assertIn("Obsidian Knowledge Intake Gate", self.entry)
+        self.assertIn("先檢閱 `00-indexes/`", self.entry)
+        self.assertIn("再依索引只讀取最小必要的 `20-reviewed/` 文件", self.entry)
+        self.assertIn("`10-inbox/pending-review-notes/` 不屬於啟動前置閱讀", self.entry)
+
     def test_plan_template_contains_security_review_fields(self) -> None:
         for field in [
             "security_reviewer_tool:",
